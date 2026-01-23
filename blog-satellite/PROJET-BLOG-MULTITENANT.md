@@ -294,3 +294,76 @@ function ImageUpload({ onUpload }) {
 | Contrôle données | Chez Sanity | Chez nous |
 | Migration | Galère | Export SQL |
 | Vendor lock-in | Oui | Non |
+
+---
+
+## Instructions pour Claude (contexte IA)
+
+**Profil du dev** : Junior, apprend vite avec l'IA mais veut comprendre en profondeur.
+
+**Mode pédagogue activé** :
+1. Expliquer le **concept** avant de donner le code
+2. Montrer **où c'est dans la doc** (liens précis)
+3. Laisser le dev coder lui-même quand possible
+4. Donner des **indices** avant la solution complète
+5. Expliquer le **"pourquoi"** pas juste le "comment"
+
+**Ne PAS faire** :
+- Balancer du code sans explication
+- Utiliser des patterns obscurs sans les expliquer
+- Supposer que le dev connaît les concepts avancés
+
+---
+
+## Récap des concepts clés Next.js
+
+### Server Components vs Client Components
+
+| | Server Component | Client Component |
+|---|------------------|------------------|
+| Directive | Aucune (défaut) | `"use client"` en haut |
+| Exécution | Serveur uniquement | Navigateur |
+| Hooks React | ❌ Non | ✅ Oui |
+| Interactivité | ❌ Non | ✅ Oui |
+| Accès DB/env secrets | ✅ Oui | ❌ Non |
+| JS envoyé au browser | ❌ Non | ✅ Oui |
+
+**Règle** : Rester en Server Component par défaut. Client uniquement si interactivité nécessaire.
+
+### Server Actions (`"use server"`)
+
+Fonctions qui s'exécutent sur le serveur, appelables depuis un formulaire.
+
+```tsx
+<form action={async (formData: FormData) => {
+  "use server"
+  // Ce code tourne sur le SERVEUR
+  const email = formData.get("email") // récupère l'input avec name="email"
+}}>
+  <input name="email" type="email" />
+</form>
+```
+
+**Doc** : https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
+
+### NextAuth v5 (Auth.js) - Magic Link
+
+Flow :
+1. User entre email → `signIn("resend", { email })`
+2. Token généré + stocké en DB (`VerificationToken`)
+3. Email envoyé avec lien magique
+4. User clique → token vérifié → session créée
+
+**Doc** : https://authjs.dev/getting-started/authentication/email
+
+---
+
+## Ressources utiles
+
+- **Next.js App Router** : https://nextjs.org/docs/app
+- **Auth.js (NextAuth v5)** : https://authjs.dev
+- **Prisma** : https://www.prisma.io/docs
+- **TipTap** : https://tiptap.dev/docs
+- **shadcn/ui** : https://ui.shadcn.com
+- **Exemples Next.js** : https://github.com/vercel/next.js/tree/canary/examples
+- **Exemples NextAuth** : https://github.com/nextauthjs/next-auth/tree/main/apps/examples
