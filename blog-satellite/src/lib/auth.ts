@@ -12,7 +12,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       from: "onboarding@resend.dev",
     }),
   ],
-   callbacks: {
+   callbacks: 
+   {
+      async signIn({user}) {
+        const existingUser = await prisma.user.findUnique({
+          where: {email: user.email}
+        })
+        if(!existingUser) return false
+        return true
+      },
       session({ session, user }) {
         session.user.id = user.id
         session.user.role = user.role
@@ -24,5 +32,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         signIn: "/login",
         verifyRequest: "/login/verify"
     }
-
 })

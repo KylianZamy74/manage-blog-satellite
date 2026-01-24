@@ -367,3 +367,67 @@ Flow :
 - **shadcn/ui** : https://ui.shadcn.com
 - **Exemples Next.js** : https://github.com/vercel/next.js/tree/canary/examples
 - **Exemples NextAuth** : https://github.com/nextauthjs/next-auth/tree/main/apps/examples
+
+---
+
+## Avancement du projet
+
+### Session 1 - Terminé
+
+- [x] Setup Next.js 16 + App Router
+- [x] Prisma 6 + Neon (PostgreSQL) connecté
+- [x] NextAuth v5 avec Resend (magic link) fonctionnel
+- [x] Page `/login` (formulaire email)
+- [x] Page `/login/verify` (message "check tes mails")
+- [x] Middleware de protection des routes `/dashboard/*`
+- [x] Flow auth complet testé et fonctionnel
+- [x] shadcn/ui initialisé avec Sidebar
+
+### Prochaine session - À faire
+
+- [ ] Déplacer la Sidebar dans `app/dashboard/layout.tsx`
+- [ ] Ajouter le Header (user info + logout)
+- [ ] Page `/dashboard` (stats basiques)
+- [ ] Page `/dashboard/articles` (liste des articles)
+- [ ] CRUD articles avec TipTap
+
+---
+
+## Pièges rencontrés (à retenir !)
+
+| Piège | Solution |
+|-------|----------|
+| Prisma 7 + Neon = galère | Rester sur **Prisma 6** |
+| Middleware sur Edge Runtime + Prisma | Ajouter `export const runtime = "nodejs"` |
+| Middleware doit être au même niveau que `app/` | Si `app/` à la racine → `middleware.ts` à la racine |
+| Resend en dev = seulement ton email | Utiliser l'email de ton compte Resend pour tester |
+| `pathname !== "/login"` oublie `/login/verify` | Utiliser `!pathname.startsWith("/login")` |
+
+---
+
+## Structure actuelle du projet
+
+```
+blog-satellite/
+├── app/
+│   ├── api/auth/[...nextauth]/route.ts
+│   ├── login/
+│   │   ├── page.tsx          ✅ Formulaire magic link
+│   │   └── verify/page.tsx   ✅ "Check tes mails"
+│   ├── dashboard/
+│   │   └── page.tsx          ✅ Sidebar shadcn (à déplacer dans layout)
+│   ├── layout.tsx
+│   ├── page.tsx
+│   └── globals.css
+├── src/
+│   ├── components/ui/        ✅ Composants shadcn
+│   ├── lib/
+│   │   ├── auth.ts           ✅ Config NextAuth
+│   │   ├── prisma.ts         ✅ Instance Prisma
+│   │   └── utils.ts
+│   └── types/next-auth.d.ts  ✅ Types session étendus
+├── prisma/
+│   └── schema.prisma         ✅ Schéma DB
+├── middleware.ts             ✅ Protection routes
+└── .env                      ✅ Variables d'env
+```
