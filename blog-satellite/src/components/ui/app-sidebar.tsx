@@ -1,6 +1,7 @@
-import { FileText, Home, Icon, PenSquare, Settings } from "lucide-react"
+import { FileText, Home, PenSquare, Settings, List } from "lucide-react"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
+
 
 import {
     Sidebar,
@@ -38,6 +39,11 @@ const itemAdmin = [
         title: "Créer un utilisateur",
         url: "/dashboard/admin/users/new",
         icon: PenSquare
+    },
+    {
+        title: "Liste des utilisateurs",
+        url: "/dashboard/admin/users",
+        icon: List
     }
 ]
 
