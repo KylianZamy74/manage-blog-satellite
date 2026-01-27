@@ -28,10 +28,6 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     })
     if (!editor) return null
 
-    const addImage = (url: string) => {
-        editor.chain().focus().setImage({ src: url }).run()
-    }
-
     return (
         <>
             <div className="border rounded-lg overflow-hidden">

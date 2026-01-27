@@ -22,17 +22,20 @@ function slugify(text: string) {
 
 export async function createArticle(prevState: ArticleAction | null, formData: FormData): Promise<ArticleAction> {
 
+    
   const title = formData.get('title') as string
   const contentRaw = formData.get('content') as string
   const content = JSON.parse(contentRaw)
   const image = formData.get("image") as string | null
   const excerpt = formData.get("excerpt") as string
+  const metaDescription = formData.get("metadescription") as string
   const slug = slugify(title)
   const session = await auth()
   if(!session?.user?.id){
     return({success: false, message:"Aucun utilisateur authentifié"})
   }
-  
+  const authorIdFromForm = formData.get("authorId") as string | null
+  const authorId = authorIdFromForm ||session?.user.id
   
   if (!title || !content) {
     return {success:false, message: "Titre et contenu requis"}
@@ -46,7 +49,8 @@ export async function createArticle(prevState: ArticleAction | null, formData: F
         slug,
         image,
         excerpt,
-        authorId: session.user.id,
+        metaDescription,
+        authorId,
         status: 'DRAFT'
       }
     })

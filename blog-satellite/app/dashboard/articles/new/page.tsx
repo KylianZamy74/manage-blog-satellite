@@ -1,21 +1,22 @@
-"use client"
 
-import { useState } from "react"
-import TiptapEditor from "@/components/ui/TiptapEditor"
+import { createArticle } from "@/actions/articles/action"
+import { getUsers } from "@/actions/users/action"
+import ArticleForm from "@/components/ui/ArticleForm"
+import { auth } from "@/lib/auth"
 
-export default function NewArticle() {
+export default async function NewArticle() {
 
-const [content, setContent] = useState('')
+const session = await auth()
+const isAdmin = session?.user?.role === 'ADMIN'
+const usersResult = await getUsers()
+const users = Array.isArray(usersResult) ? usersResult : []
 
-    return(
-        <>
+return (
+        
         <div className="p-8">
             <h1 className="text-2xl font-semibold">Test Tiptap</h1>
-            <TiptapEditor onChange={setContent}/>
+            <ArticleForm users={users} isAdmin={isAdmin} />
         </div>
-        <pre className="mt-4 p-4 bg-gray-100 text-xs overflow-auto max-h-[200px]">
-          {content}
-        </pre>
-        </>
+        
     )
 }

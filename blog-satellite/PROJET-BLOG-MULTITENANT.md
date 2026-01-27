@@ -383,13 +383,44 @@ Flow :
 - [x] Flow auth complet testé et fonctionnel
 - [x] shadcn/ui initialisé avec Sidebar
 
+### Session 2 - Terminé
+
+- [x] Dashboard layout avec Sidebar + Header
+- [x] Séparation des routes admin/client par middleware
+- [x] **CRUD Utilisateurs** (`src/actions/users/action.ts`)
+  - [x] `createUser()` - Créer un utilisateur CLIENT
+  - [x] `deleteUser()` - Supprimer avec vérification auth
+  - [x] `getUsers()` - Liste tous les utilisateurs
+  - [x] `getUser()` - Récupérer par ID
+- [x] Page admin/users avec table shadcn pour afficher les utilisateurs
+- [x] **CRUD Articles** (`src/actions/articles/action.ts`)
+  - [x] `createArticle()` - Créer avec génération slug automatique
+  - [x] `editArticle()` - Modifier avec vérification auteur
+  - [x] `deleteArticle()` - Supprimer avec vérification auteur
+  - [x] `getArticles()` - Liste tous les articles
+  - [x] `getArticle()` - Récupérer par ID
+- [x] **Éditeur TipTap** (`src/components/ui/TiptapEditor.tsx`)
+  - [x] Toolbar : Bold, Italic, H1, H2, H3, Liste, Blockquote, Image
+  - [x] Styles dans globals.css avec `@layer components` pour `.ProseMirror`
+  - [x] Extension `tiptap-extension-resize-image` pour redimensionner les images
+  - [x] Images inline (`inline: true`) pour mettre côte à côte
+- [x] **Upload Cloudinary** intégré dans TipTap
+  - [x] `CldUploadWidget` avec `uploadPreset`
+  - [x] Insertion automatique de l'image dans l'éditeur
+
 ### Prochaine session - À faire
 
-- [ ] Déplacer la Sidebar dans `app/dashboard/layout.tsx`
-- [ ] Ajouter le Header (user info + logout)
-- [ ] Page `/dashboard` (stats basiques)
-- [ ] Page `/dashboard/articles` (liste des articles)
-- [ ] CRUD articles avec TipTap
+- [ ] Formulaire complet de création d'article (titre, excerpt, image couverture, contenu TipTap)
+- [ ] Page `/dashboard/articles` - Liste des articles avec actions
+- [ ] Page `/dashboard/articles/[id]/edit` - Édition d'article
+- [ ] **Admin : Assigner un article à un utilisateur**
+- [ ] **Auto-save en brouillon** (sauvegarde auto quand on quitte/change de page)
+  - [ ] Sauvegarder toutes les X secondes ou à chaque modification
+  - [ ] Détecter `beforeunload` pour sauvegarder avant fermeture
+  - [ ] Reprendre le brouillon au retour sur la page
+- [ ] Système de Preview (voir l'article comme le client final)
+- [ ] Publier/Dépublier un article
+- [ ] API publique pour les blogs Astro
 
 ---
 
