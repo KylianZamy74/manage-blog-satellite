@@ -24,11 +24,14 @@ const [state, formAction, isPending] = useActionState(createArticle, null)
 
     return(
         <>
-  
             <form action={formAction} className="space-y-2 flex flex-col">
+                <label htmlFor="title" className="font-semibold">Titre de l&apos;article</label>
                 <Input name="title" type="text" placeholder="Ajouter le titre de l'article"></Input>
+                <label htmlFor="excerpt" className="font-semibold">Courte description de l&apos;article</label>
                 <Input name="excerpt" type="text" placeholder="Court résumé de votre article de blog"></Input>
+                <label htmlFor="metadescription" className="font-semibold">Méta-description</label>
                 <Input name="metadescription" type="text" placeholder="Ajouter la méta-description"></Input>
+                <label htmlFor="content" className="font-semibold">Contenu de votre article</label>
                 <Input type="hidden" name="content" value={content}></Input>
                 <TiptapEditor onChange={setContent}/>
                 

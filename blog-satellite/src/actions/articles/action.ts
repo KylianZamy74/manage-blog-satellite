@@ -2,8 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { createArticleSchema } from "@/lib/schemas/article";
 
 interface ArticleAction {
     success: boolean
@@ -22,20 +22,26 @@ function slugify(text: string) {
 
 export async function createArticle(prevState: ArticleAction | null, formData: FormData): Promise<ArticleAction> {
 
-    
-  const title = formData.get('title') as string
-  const contentRaw = formData.get('content') as string
-  const content = JSON.parse(contentRaw)
-  const image = formData.get("image") as string | null
-  const excerpt = formData.get("excerpt") as string
-  const metaDescription = formData.get("metadescription") as string
+  const rawData = {
+  title: formData.get('title') as string,
+  content: formData.get('content') as string,
+  excerpt:  formData.get('excerpt'),
+  image:formData.get("image") as string | null,
+  authorIdFromForm: formData.get("authorId") as string | null,
+  metaDescription:formData.get("metadescription") as string
+  }
+  const result = createArticleSchema.safeParse(rawData)
+  if(!result.success) {
+    const firstError = result.error.issues[0]?.message
+    return {success: false, message: firstError || "Donnés invalides"}
+  }
+  const { title, content, excerpt, metaDescription, image, authorIdFromForm } = result.data
   const slug = slugify(title)
   const session = await auth()
   if(!session?.user?.id){
     return({success: false, message:"Aucun utilisateur authentifié"})
   }
-  const authorIdFromForm = formData.get("authorId") as string | null
-  const authorId = authorIdFromForm ||session?.user.id
+  const authorId = authorIdFromForm || session?.user.id
   
   if (!title || !content) {
     return {success:false, message: "Titre et contenu requis"}
@@ -54,7 +60,6 @@ export async function createArticle(prevState: ArticleAction | null, formData: F
         status: 'DRAFT'
       }
     })
-
  
   } catch (error) {
     console.error(error)
@@ -73,6 +78,7 @@ export async function editArticle(id: string, formData: FormData){
     const title = formData.get("title") as string
     const contentRaw = formData.get("content") as string
     const content = JSON.parse(contentRaw)
+    const metaDescription = formData.get("metadescription") as string
     const slug = formData.get("slug") as string
     const excerpt = formData.get("excerpt") as string
     const session = await auth()
@@ -87,7 +93,7 @@ export async function editArticle(id: string, formData: FormData){
     try {
         await prisma.article.update({
             where: { id },
-            data: {title, content, slug, excerpt}
+            data: {title, content, metaDescription, slug, excerpt}
         })
         revalidatePath("/dashboard/articles")
         return {success: true, message:"Modification de l'article effectué avec succès"}
@@ -140,6 +146,25 @@ export async function getArticle(id: string) {
             where: {id}
         })
         return article
+
+    } catch (error) {
+        console.error(error)
+        return {success:false, message:"Echec lors de la récupération de l'article"}
+    }
+}
+
+export async function getMyArticles() {
+
+    const session = await auth()
+    if(!session){
+        return {success: false, message:"Aucune session actives"}
+    }
+    try {
+     const articles = await prisma.article.findMany({
+        where: {authorId: session.user.id},
+        orderBy: { createdAt: 'desc' }
+     }) 
+     return articles
 
     } catch (error) {
         console.error(error)
