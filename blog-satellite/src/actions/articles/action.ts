@@ -19,6 +19,21 @@ function slugify(text: string) {
     return slug;
 }
 
+function extractFirstImage(content: any){
+    if(!content) return null 
+    if (content.type === 'imageResize' && content.attrs?.src) {
+    return content.attrs.src
+  }
+
+  if (content.content && Array.isArray(content.content)) {
+    for (const node of content.content) {
+      const found = extractFirstImage(node)
+      if (found) return found
+    }
+}
+    return null
+}
+
 
 export async function createArticle(prevState: ArticleAction | null, formData: FormData): Promise<ArticleAction> {
 
@@ -37,6 +52,7 @@ export async function createArticle(prevState: ArticleAction | null, formData: F
   }
   const { title, content, excerpt, metaDescription, image, authorIdFromForm } = result.data
   const slug = slugify(title)
+  const coverImage = image || extractFirstImage(JSON.parse(content))
   const session = await auth()
   if(!session?.user?.id){
     return({success: false, message:"Aucun utilisateur authentifié"})
@@ -53,7 +69,7 @@ export async function createArticle(prevState: ArticleAction | null, formData: F
         title,
         content,
         slug,
-        image,
+        image: coverImage,
         excerpt,
         metaDescription,
         authorId,
@@ -73,15 +89,19 @@ export async function createArticle(prevState: ArticleAction | null, formData: F
   return {success: true, message: "Article créer avec succès"}
 }
 
-export async function editArticle(id: string, formData: FormData){
+export async function editArticle(id: string, prevState: any, formData: FormData){
 
     const title = formData.get("title") as string
     const contentRaw = formData.get("content") as string
     const content = JSON.parse(contentRaw)
     const metaDescription = formData.get("metadescription") as string
-    const slug = formData.get("slug") as string
+    const slug = slugify(title)
     const excerpt = formData.get("excerpt") as string
+    const image = formData.get("image") as string | null
+    const coverImage = image || extractFirstImage(content)
+
     const session = await auth()
+    
     if(!session?.user?.id) {
         return { success: false, message: "Non authentifié" }
     }
@@ -93,7 +113,7 @@ export async function editArticle(id: string, formData: FormData){
     try {
         await prisma.article.update({
             where: { id },
-            data: {title, content, metaDescription, slug, excerpt}
+            data: {title, content, metaDescription, slug, excerpt, image:coverImage}
         })
         revalidatePath("/dashboard/articles")
         return {success: true, message:"Modification de l'article effectué avec succès"}
@@ -164,7 +184,11 @@ export async function getMyArticles() {
         where: {authorId: session.user.id},
         orderBy: { createdAt: 'desc' }
      }) 
-     return articles
+     const articlesWithCover = articles.map((article ) => ({
+        ...article,
+        coverImage: extractFirstImage(article.content)
+     }))
+     return articlesWithCover
 
     } catch (error) {
         console.error(error)

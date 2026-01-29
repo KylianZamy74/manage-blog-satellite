@@ -408,18 +408,75 @@ Flow :
   - [x] `CldUploadWidget` avec `uploadPreset`
   - [x] Insertion automatique de l'image dans l'éditeur
 
+### Session 3 - Terminé
+
+- [x] **Validation Zod** (`src/lib/schemas/article.ts`)
+  - [x] Schéma `createArticleSchema` avec validation des champs
+  - [x] Validation custom `.refine()` pour le contenu TipTap (vérifie JSON valide + non vide)
+  - [x] Gestion des champs optionnels avec `.nullish()` (accepte `null` et `undefined`)
+  - [x] Intégration dans `createArticle()` avec `safeParse()`
+  - [x] Messages d'erreur propres pour l'UX
+- [x] **Correction bug `getMyArticles()`**
+  - [x] Avant : passait un boolean au `where` de Prisma (bug)
+  - [x] Après : utilise `session.user.id` pour filtrer les articles de l'utilisateur connecté
+- [x] **UI Cards articles** - Affichage des articles en cards
+
 ### Prochaine session - À faire
 
-- [ ] Formulaire complet de création d'article (titre, excerpt, image couverture, contenu TipTap)
-- [ ] Page `/dashboard/articles` - Liste des articles avec actions
+#### Priorité 1 : Extraction automatique de l'image de couverture
+
+- [ ] **Créer fonction `extractFirstImage(content)`** dans `action.ts`
+  - [ ] Parcourir récursivement le JSON TipTap
+  - [ ] Trouver le premier node de type "image"
+  - [ ] Retourner `attrs.src` ou `null`
+  - [ ] Utiliser dans `createArticle()` pour remplir le champ `image` automatiquement
+
+```ts
+// Exemple de la fonction à implémenter
+function extractFirstImage(content: any): string | null {
+  if (!content) return null
+
+  // Si c'est un node image, retourne son src
+  if (content.type === 'image' && content.attrs?.src) {
+    return content.attrs.src
+  }
+
+  // Si le node a des enfants, on les parcourt (récursif)
+  if (content.content && Array.isArray(content.content)) {
+    for (const node of content.content) {
+      const found = extractFirstImage(node)
+      if (found) return found
+    }
+  }
+
+  return null
+}
+```
+
+#### Priorité 2 : Table des articles
+
+- [ ] Page `/dashboard/articles` - Liste des articles avec table shadcn
+- [ ] Colonnes : Titre, Status, Date création, Actions (éditer/supprimer)
+- [ ] Boutons d'action fonctionnels
+
+#### Priorité 3 : Édition d'article
+
 - [ ] Page `/dashboard/articles/[id]/edit` - Édition d'article
-- [ ] **Admin : Assigner un article à un utilisateur**
+- [ ] Pré-remplir le formulaire avec les données existantes
+- [ ] Appliquer la validation Zod aussi sur `editArticle()`
+
+#### Priorité 4 : Auto-save brouillon
+
 - [ ] **Auto-save en brouillon** (sauvegarde auto quand on quitte/change de page)
   - [ ] Sauvegarder toutes les X secondes ou à chaque modification
   - [ ] Détecter `beforeunload` pour sauvegarder avant fermeture
+  - [ ] Stocker en localStorage ou créer un brouillon en DB
   - [ ] Reprendre le brouillon au retour sur la page
+
+#### Priorité 5 : Preview & Publication
+
 - [ ] Système de Preview (voir l'article comme le client final)
-- [ ] Publier/Dépublier un article
+- [ ] Publier/Dépublier un article (changer le status DRAFT → PUBLISHED)
 - [ ] API publique pour les blogs Astro
 
 ---
@@ -433,6 +490,11 @@ Flow :
 | Middleware doit être au même niveau que `app/` | Si `app/` à la racine → `middleware.ts` à la racine |
 | Resend en dev = seulement ton email | Utiliser l'email de ton compte Resend pour tester |
 | `pathname !== "/login"` oublie `/login/verify` | Utiliser `!pathname.startsWith("/login")` |
+| **Zod 4** : `.url()` deprecated sur `z.string()` | Utiliser `z.url()` directement |
+| **Zod 4** : `result.error.errors` n'existe plus | Utiliser `result.error.issues` |
+| **Zod 4** : `.optional()` n'accepte pas `null` | Utiliser `.nullish()` pour accepter `null` ET `undefined` |
+| `formData.get()` retourne `null` si champ absent | Utiliser `.nullish()` dans le schéma Zod |
+| `JSON.parse('')` crash | Valider avec `.refine()` AVANT de parser |
 
 ---
 
@@ -446,19 +508,29 @@ blog-satellite/
 │   │   ├── page.tsx          ✅ Formulaire magic link
 │   │   └── verify/page.tsx   ✅ "Check tes mails"
 │   ├── dashboard/
-│   │   └── page.tsx          ✅ Sidebar shadcn (à déplacer dans layout)
+│   │   ├── page.tsx          ✅ Dashboard
+│   │   └── articles/
+│   │       └── new/page.tsx  ✅ Formulaire création article
 │   ├── layout.tsx
 │   ├── page.tsx
 │   └── globals.css
 ├── src/
-│   ├── components/ui/        ✅ Composants shadcn
+│   ├── actions/
+│   │   ├── articles/action.ts ✅ CRUD articles + validation Zod
+│   │   └── users/action.ts    ✅ CRUD utilisateurs
+│   ├── components/ui/
+│   │   ├── ArticleForm.tsx    ✅ Formulaire article (client component)
+│   │   ├── TiptapEditor.tsx   ✅ Éditeur rich text
+│   │   └── ...                ✅ Composants shadcn
 │   ├── lib/
-│   │   ├── auth.ts           ✅ Config NextAuth
-│   │   ├── prisma.ts         ✅ Instance Prisma
+│   │   ├── auth.ts            ✅ Config NextAuth
+│   │   ├── prisma.ts          ✅ Instance Prisma
+│   │   ├── schemas/
+│   │   │   └── article.ts     ✅ Schéma Zod validation articles
 │   │   └── utils.ts
-│   └── types/next-auth.d.ts  ✅ Types session étendus
+│   └── types/next-auth.d.ts   ✅ Types session étendus
 ├── prisma/
-│   └── schema.prisma         ✅ Schéma DB
-├── middleware.ts             ✅ Protection routes
-└── .env                      ✅ Variables d'env
+│   └── schema.prisma          ✅ Schéma DB
+├── middleware.ts              ✅ Protection routes
+└── .env                       ✅ Variables d'env
 ```

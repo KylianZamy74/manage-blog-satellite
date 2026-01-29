@@ -1,7 +1,6 @@
 
-import { createArticle } from "@/actions/articles/action"
 import { getUsers } from "@/actions/users/action"
-import ArticleForm from "@/components/ui/ArticleForm"
+import ArticleForm from "@/components/ui/CreateArticleForm"
 import { auth } from "@/lib/auth"
 
 export default async function NewArticle() {

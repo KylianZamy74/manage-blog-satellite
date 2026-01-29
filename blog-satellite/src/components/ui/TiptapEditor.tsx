@@ -8,7 +8,7 @@ import { Bold, Italic, Heading1, Heading2, Heading3, List, Quote, ImageIcon } fr
 import { CldUploadWidget } from 'next-cloudinary';
 
 interface TiptapEditorProps {
-    content?: string
+    content?: string | object
     onChange: (json: string) => void
 }
 
@@ -16,11 +16,13 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     const editor = useEditor({
         extensions: [
             StarterKit,
-             ImageResize.configure({
-          inline: true,
-      }),
+            ImageResize.configure({
+                inline: true,
+            }),
         ],
-        content: content ? JSON.parse(content) : '<p>Écris ici...</p>',
+        content: content
+            ? (typeof content === 'string' ? JSON.parse(content) : content)
+            : '<p>Écris ici...</p>',
         onUpdate: ({ editor }) => {
             onChange(JSON.stringify(editor.getJSON()))
         },
