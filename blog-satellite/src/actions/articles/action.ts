@@ -200,7 +200,7 @@ export async function saveDraft(id: string | null, data: { title, content, excer
 
 
     const slug = slugify(data.title)
-    const coverImage = data.image || extractFirstImage(JSON.parse(data.content))
+    const coverImage = data.image || (data.content ? extractFirstImage(JSON.parse(data.content)) : null) 
     const session = await auth()
     if (!session?.user?.id) {
         return ({ success: false, message: "Aucun utilisateur authentifié" })
@@ -212,7 +212,7 @@ export async function saveDraft(id: string | null, data: { title, content, excer
             const article = await prisma.article.create({
                 data: {
                     title: data.title,
-                    content: data.content,
+                    content: JSON.parse(data.content),
                     slug,
                     image: coverImage,
                     excerpt: data.excerpt,
@@ -234,7 +234,7 @@ export async function saveDraft(id: string | null, data: { title, content, excer
             try {
                 const updatedArticle = await prisma.article.update({
                     where: { id },
-                    data: { title: data.title, content: data.content, excerpt: data.excerpt, image: coverImage, authorId: authorId, metaDescription: data.metaDescription }
+                    data: { title: data.title, content: JSON.parse(data.content), excerpt: data.excerpt, image: coverImage, authorId: authorId, metaDescription: data.metaDescription }
                 })
                 revalidatePath("/dashboard/articles")
                 return { success: true, message: "Modification de l'article effectué avec succès" }
