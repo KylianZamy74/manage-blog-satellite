@@ -64,6 +64,7 @@ model Article {
   content     Json
   excerpt     String?
   metaDescription String?
+  metaTitle     String?
   image       String?
   status      Status    @default(DRAFT)
   authorId    String

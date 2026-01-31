@@ -23,6 +23,7 @@ const [content, setContent] = useState('')
 const [draftId, setDraftId] = useState<string | null>(null)
 const [title, setTitle] = useState("")
 const [excerpt, setExcerpt] = useState("")
+const [metaTitle, setMetaTitle] = useState("")
 const [metaDescription, setMetaDescription] = useState("")
 const [isSaving, setIsSaving] = useState(false)
 const [state, formAction, isPending] = useActionState(createArticle, null)
@@ -31,7 +32,7 @@ useEffect(() => {
 
     const timer = setTimeout(async () => {
         setIsSaving(true)
-        const result = await saveDraft(draftId, {title, content, excerpt, image: null, authorIdFromForm: null, metaDescription})
+        const result = await saveDraft(draftId, {title, content, excerpt, image: null, authorIdFromForm: null, metaDescription, metaTitle})
         if(result?.success && result?.id && !draftId) {
             setDraftId(result.id)
         }
@@ -49,6 +50,8 @@ useEffect(() => {
                 <Input name="excerpt" type="text" placeholder="Court résumé de votre article de blog" value={excerpt} onChange={(e) => setExcerpt(e.target.value)}></Input>
                 <label htmlFor="metadescription" className="font-semibold">Méta-description</label>
                 <Input name="metadescription" type="text" placeholder="Ajouter la méta-description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)}></Input>
+                <label htmlFor="metatitle" className="font-semibold">Méta-title</label>
+                <Input name="metatitle" type="text" placeholder="Ajouter le méta-titre (titre de l'article visible depuis Google)" value={metaTitle} onChange={(e) => setMetaDescription(e.target.value)}></Input>
                 <label htmlFor="content" className="font-semibold">Contenu de votre article</label>
                 <Input type="hidden" name="content" value={content}></Input>
                 <TiptapEditor onChange={setContent}/>

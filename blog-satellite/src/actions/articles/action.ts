@@ -43,14 +43,15 @@ export async function createArticle(prevState: ArticleAction | null, formData: F
         excerpt: formData.get('excerpt'),
         image: formData.get("image") as string | null,
         authorIdFromForm: formData.get("authorId") as string | null,
-        metaDescription: formData.get("metadescription") as string
+        metaDescription: formData.get("metadescription") as string,
+        metaTitle: formData.get("metatitle") as string
     }
     const result = createArticleSchema.safeParse(rawData)
     if (!result.success) {
         const firstError = result.error.issues[0]?.message
         return { success: false, message: firstError || "Donnés invalides" }
     }
-    const { title, content, excerpt, metaDescription, image, authorIdFromForm } = result.data
+    const { title, content, excerpt, metaDescription, metaTitle, image, authorIdFromForm } = result.data
     const slug = slugify(title)
     const coverImage = image || extractFirstImage(JSON.parse(content))
     const session = await auth()
@@ -72,6 +73,7 @@ export async function createArticle(prevState: ArticleAction | null, formData: F
                 image: coverImage,
                 excerpt,
                 metaDescription,
+                metaTitle,
                 authorId,
                 status: 'DRAFT'
             }
@@ -95,6 +97,7 @@ export async function editArticle(id: string, prevState: any, formData: FormData
     const contentRaw = formData.get("content") as string
     const content = JSON.parse(contentRaw)
     const metaDescription = formData.get("metadescription") as string
+    const metaTitle = formData.get("metatitle") as string
     const slug = slugify(title)
     const excerpt = formData.get("excerpt") as string
     const image = formData.get("image") as string | null
@@ -113,7 +116,7 @@ export async function editArticle(id: string, prevState: any, formData: FormData
     try {
         await prisma.article.update({
             where: { id },
-            data: { title, content, metaDescription, slug, excerpt, image: coverImage }
+            data: { title, content, metaDescription, metaTitle, slug, excerpt, image: coverImage }
         })
         revalidatePath("/dashboard/articles")
         return { success: true, message: "Modification de l'article effectué avec succès" }
@@ -196,7 +199,7 @@ export async function getMyArticles() {
     }
 }
 
-export async function saveDraft(id: string | null, data: { title, content, excerpt, image, authorIdFromForm, metaDescription }) {
+export async function saveDraft(id: string | null, data: { title, content, excerpt, image, authorIdFromForm, metaDescription, metaTitle }) {
 
 
     const slug = slugify(data.title)
@@ -217,6 +220,7 @@ export async function saveDraft(id: string | null, data: { title, content, excer
                     image: coverImage,
                     excerpt: data.excerpt,
                     metaDescription: data.metaDescription,
+                    metaTitle: data.metaTitle,
                     authorId,
                     status: 'DRAFT'
                 }
