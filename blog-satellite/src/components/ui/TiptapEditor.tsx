@@ -1,11 +1,15 @@
 "use client"
 
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import ImageResize from 'tiptap-extension-resize-image'
 import { Button } from '@/components/ui/button'
 import { Bold, Italic, Heading1, Heading2, Heading3, List, Quote, ImageIcon } from 'lucide-react'
 import { CldUploadWidget } from 'next-cloudinary';
+import Link from '@tiptap/extension-link'
+import { Link2 } from 'lucide-react'
+import { useCallback } from 'react'
+import { CtaButton } from '@/lib/tiptap/cta-button-extensions'
 
 interface TiptapEditorProps {
     content?: string | object
@@ -19,6 +23,11 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
             ImageResize.configure({
                 inline: true,
             }),
+            Link.configure({
+                openOnClick: false,
+                HTMLAttributes: { target: '_blank', rel: "noopener noreferrer" }
+            }),
+            CtaButton
         ],
         content: content
             ? (typeof content === 'string' ? JSON.parse(content) : content)
@@ -28,6 +37,33 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         },
         immediatelyRender: false,
     })
+
+
+    const setLink = useCallback(() => {
+        if (!editor) return
+        const previousUrl = editor.getAttributes('link').href
+        const url = window.prompt('URL', previousUrl)
+
+        // cancelled
+        if (url === null) {
+            return
+        }
+
+        // empty
+        if (url === '') {
+            editor.chain().focus().extendMarkRange('link').unsetLink().run()
+
+            return
+        }
+
+        // update link
+        try {
+            editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+        } catch (e) {
+            alert((e as Error).message)
+        }
+    }, [editor])
+
     if (!editor) return null
 
     return (
@@ -105,6 +141,14 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                             </Button>
                         )}
                     </CldUploadWidget>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => editor.chain().focus().insertContent({ type: 'ctaButton' }).run()}
+                    >
+                        CTA
+                    </Button>
                 </div>
 
                 <EditorContent

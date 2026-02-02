@@ -421,63 +421,56 @@ Flow :
   - [x] Après : utilise `session.user.id` pour filtrer les articles de l'utilisateur connecté
 - [x] **UI Cards articles** - Affichage des articles en cards
 
+### Session 4 - Terminé
+
+- [x] **Édition d'article** (`EditArticleForm.tsx`)
+  - [x] Page `/dashboard/articles/[id]/edit`
+  - [x] Pré-remplir le formulaire avec les données existantes
+  - [x] TipTap recharge le contenu JSON en rich text
+- [x] **Auto-save brouillon** (`saveDraft()` dans `action.ts`)
+  - [x] Server action `saveDraft(id, data)` — create si `id === null`, update sinon
+  - [x] Debounce 5 secondes dans `CreateArticleForm.tsx` via `useEffect` + `setTimeout` + `clearTimeout`
+  - [x] State `draftId` pour tracker l'id du brouillon après le premier save
+  - [x] State `isSaving` pour indicateur visuel
+  - [x] Inputs "controlled" (title, excerpt, metaDescription) pour détecter les changements
+  - [x] Stockage du content en `JSON.parse()` pour que Prisma reçoive un objet (champ `Json`)
+  - [x] Protection `extractFirstImage` contre le `JSON.parse("")` (content vide)
+- [x] **Champ `metaTitle`** ajouté
+  - [x] Migration Prisma `add-metaTitle`
+  - [x] Schéma Zod mis à jour
+  - [x] Formulaires création + édition + saveDraft mis à jour
+
 ### Prochaine session - À faire
 
-#### Priorité 1 : Extraction automatique de l'image de couverture
+#### Priorité 1 : Enrichir TipTap
 
-- [ ] **Créer fonction `extractFirstImage(content)`** dans `action.ts`
-  - [ ] Parcourir récursivement le JSON TipTap
-  - [ ] Trouver le premier node de type "image"
-  - [ ] Retourner `attrs.src` ou `null`
-  - [ ] Utiliser dans `createArticle()` pour remplir le champ `image` automatiquement
+- [ ] **Extension Link** — Ajouter les hyperliens dans l'éditeur
+  - [ ] Installer `@tiptap/extension-link`
+  - [ ] Bouton dans la toolbar pour insérer un lien
+  - [ ] Utile pour les CTA vers le site principal du client
+- [ ] **Alt text sur les images** — Important pour le SEO
+  - [ ] Ajouter un champ alt lors de l'upload/insertion d'image
+- [ ] **Boutons CTA** (optionnel, plus avancé)
+  - [ ] Extension custom ou liens stylisés
 
-```ts
-// Exemple de la fonction à implémenter
-function extractFirstImage(content: any): string | null {
-  if (!content) return null
+#### Priorité 2 : Preview article
 
-  // Si c'est un node image, retourne son src
-  if (content.type === 'image' && content.attrs?.src) {
-    return content.attrs.src
-  }
+- [ ] Système de Preview (voir l'article comme le client final le verrait)
+- [ ] Route `/dashboard/articles/[id]/preview` ou modale
+- [ ] Rendu du JSON TipTap en HTML propre
 
-  // Si le node a des enfants, on les parcourt (récursif)
-  if (content.content && Array.isArray(content.content)) {
-    for (const node of content.content) {
-      const found = extractFirstImage(node)
-      if (found) return found
-    }
-  }
+#### Priorité 3 : Publication
 
-  return null
-}
-```
-
-#### Priorité 2 : Table des articles
-
-- [ ] Page `/dashboard/articles` - Liste des articles avec table shadcn
-- [ ] Colonnes : Titre, Status, Date création, Actions (éditer/supprimer)
-- [ ] Boutons d'action fonctionnels
-
-#### Priorité 3 : Édition d'article
-
-- [ ] Page `/dashboard/articles/[id]/edit` - Édition d'article
-- [ ] Pré-remplir le formulaire avec les données existantes
-- [ ] Appliquer la validation Zod aussi sur `editArticle()`
-
-#### Priorité 4 : Auto-save brouillon
-
-- [ ] **Auto-save en brouillon** (sauvegarde auto quand on quitte/change de page)
-  - [ ] Sauvegarder toutes les X secondes ou à chaque modification
-  - [ ] Détecter `beforeunload` pour sauvegarder avant fermeture
-  - [ ] Stocker en localStorage ou créer un brouillon en DB
-  - [ ] Reprendre le brouillon au retour sur la page
-
-#### Priorité 5 : Preview & Publication
-
-- [ ] Système de Preview (voir l'article comme le client final)
 - [ ] Publier/Dépublier un article (changer le status DRAFT → PUBLISHED)
-- [ ] API publique pour les blogs Astro
+- [ ] Bouton dans l'UI + server action `publishArticle(id)`
+- [ ] Afficher le statut dans la liste des articles
+
+#### Priorité 4 : API publique pour Astro
+
+- [ ] Route `GET /api/public/articles?client=slug-client`
+- [ ] Retourner uniquement les articles `PUBLISHED`
+- [ ] Retourner le JSON TipTap pour rendu côté Astro
+- [ ] Pagination
 
 ---
 
@@ -495,6 +488,11 @@ function extractFirstImage(content: any): string | null {
 | **Zod 4** : `.optional()` n'accepte pas `null` | Utiliser `.nullish()` pour accepter `null` ET `undefined` |
 | `formData.get()` retourne `null` si champ absent | Utiliser `.nullish()` dans le schéma Zod |
 | `JSON.parse('')` crash | Valider avec `.refine()` AVANT de parser |
+| `prisma db push` ne met pas à jour les types TS | Toujours lancer `npx prisma generate` après (ou utiliser `migrate dev` qui le fait auto) |
+| Champ Prisma `Json` reçoit une string → double stringify | Toujours `JSON.parse()` avant de passer à Prisma pour un champ `Json` |
+| `useEffect` sans cleanup = pas de debounce | `return () => clearTimeout(timer)` annule le timer précédent |
+| `useEffect` sans dépendances = boucle infinie | Toujours mettre `[deps]` pour dire à React quand relancer |
+| Server action ≠ route API | Pas testable avec Thunder Client, s'appelle directement depuis React |
 
 ---
 
