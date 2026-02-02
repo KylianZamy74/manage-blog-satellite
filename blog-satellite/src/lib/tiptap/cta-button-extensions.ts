@@ -11,7 +11,8 @@ export const CtaButton = Node.create({
             href: { default: '#' },
             text: { default: 'Cliquez ici' },
             variant: { default: 'primary' },   // 'primary' | 'secondary'
-            color: { default: '#2563eb' },    // bleu par défaut
+            color: { default: '#2563eb' },
+            align: { default: 'left' },   // bleu par défaut
         }
     },
     renderHTML({ HTMLAttributes }) {
@@ -35,35 +36,41 @@ export const CtaButton = Node.create({
         const style = `${baseStyles}; ${variantStyles}`
 
         return [
-            'a',
-            mergeAttributes({
-                href,
-                style,
-                'data-cta': variant,       // marqueur pour parseHTML + utile pour Analytics plus tard
-                target: '_blank',
-                rel: 'noopener noreferrer',
-            }),
-            text,  // le texte affiché dans le bouton
+            'div',
+            { style: `text-align: ${HTMLAttributes.align}; margin: 16px 0` },
+            [
+                'a',
+                mergeAttributes({
+                    href,
+                    style,
+                    'data-cta': variant,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                }),
+                text,
+            ],
         ]
     },
     parseHTML() {
         return [
             {
-                tag: 'a[data-cta]',
+                tag: 'div:has(> a[data-cta])',
                 getAttrs: (element) => {
                     if (typeof element === 'string') return false
+                    const link = element.querySelector('a[data-cta]')
+                    if (!link) return false
                     return {
-                        href: element.getAttribute('href'),
-                        text: element.textContent,
-                        variant: element.getAttribute('data-cta') || 'primary',
-                        // On essaie de récupérer la couleur depuis le style inline
-                        color: element.style.backgroundColor || element.style.color || '#2563eb',
+                        href: link.getAttribute('href'),
+                        text: link.textContent,
+                        variant: link.getAttribute('data-cta') || 'primary',
+                        color: (link as HTMLElement).style.backgroundColor || (link as HTMLElement).style.color || '#2563eb',
+                        align: element.style.textAlign || 'left',
                     }
                 },
             },
         ]
     },
-    addNodeView(){
+    addNodeView() {
         return ReactNodeViewRenderer(CtaButtonView)
     }
 

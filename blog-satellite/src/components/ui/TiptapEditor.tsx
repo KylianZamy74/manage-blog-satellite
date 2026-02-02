@@ -2,7 +2,7 @@
 
 import { useEditor, EditorContent, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import ImageResize from 'tiptap-extension-resize-image'
+import { CustomImage } from '@/lib/tiptap/custom-image-extension'
 import { Button } from '@/components/ui/button'
 import { Bold, Italic, Heading1, Heading2, Heading3, List, Quote, ImageIcon } from 'lucide-react'
 import { CldUploadWidget } from 'next-cloudinary';
@@ -10,6 +10,9 @@ import Link from '@tiptap/extension-link'
 import { Link2 } from 'lucide-react'
 import { useCallback } from 'react'
 import { CtaButton } from '@/lib/tiptap/cta-button-extensions'
+import { ImageGallery } from '@/lib/tiptap/image-gallery-extension'
+import TextAlign from '@tiptap/extension-text-align'
+import { AlignCenter, AlignLeft, AlignRight, LayoutGrid } from 'lucide-react'
 
 interface TiptapEditorProps {
     content?: string | object
@@ -20,14 +23,16 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     const editor = useEditor({
         extensions: [
             StarterKit,
-            ImageResize.configure({
-                inline: true,
-            }),
+            CustomImage,
             Link.configure({
                 openOnClick: false,
                 HTMLAttributes: { target: '_blank', rel: "noopener noreferrer" }
             }),
-            CtaButton
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],  // les types de nodes qui supportent l'alignement
+            }),
+            CtaButton,
+            ImageGallery,
         ],
         content: content
             ? (typeof content === 'string' ? JSON.parse(content) : content)
@@ -131,7 +136,10 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                         uploadPreset="blog_images"
                         onSuccess={(result) => {
                             if (typeof result.info === 'object' && result.info.secure_url) {
-                                editor.chain().focus().setImage({ src: result.info.secure_url }).run()
+                                editor.chain().focus().insertContent({
+                                    type: 'customImage',
+                                    attrs: { src: result.info.secure_url },
+                                }).run()
                             }
                         }}
                     >
@@ -148,6 +156,40 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                         onClick={() => editor.chain().focus().insertContent({ type: 'ctaButton' }).run()}
                     >
                         CTA
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => editor.chain().focus().insertContent({ type: 'imageGallery' }).run()}
+                    >
+                        <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={editor.isActive({ textAlign: 'left' }) ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                    >
+                        <AlignLeft />
+
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={editor.isActive({ textAlign: 'center' }) ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                    >
+                        <AlignCenter />
+
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={editor.isActive({ textAlign: 'right' }) ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                    >
+                        <AlignRight />
                     </Button>
                 </div>
 

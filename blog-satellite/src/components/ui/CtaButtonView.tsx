@@ -5,14 +5,17 @@ import { useState } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import TextAlign from "@tiptap/extension-text-align"
+import { AlignCenter, AlignLeft, AlignRight } from "lucide-react"
 
 export default function CtaButtonView({ node, updateAttributes }: any) {
-    const { href, text, variant, color } = node.attrs
+    const { href, text, variant, color, align } = node.attrs
 
     const [editText, setEditText] = useState(text)
     const [editHref, setEditHref] = useState(href)
     const [editColor, setEditColor] = useState(color)
     const [editVariant, setEditVariant] = useState(variant)
+    const [editAlign, setEditAlign] = useState(align)
     const [open, setOpen] = useState(false)
 
     const handleSave = () => {
@@ -21,6 +24,7 @@ export default function CtaButtonView({ node, updateAttributes }: any) {
               href: editHref,
               color: editColor,
               variant: editVariant,
+              align: editAlign
           })
           setOpen(false)
       }
@@ -41,7 +45,7 @@ export default function CtaButtonView({ node, updateAttributes }: any) {
           : { backgroundColor: 'transparent', color: editColor, border: `2px solid ${editColor}` }
 
           return(
-            <NodeViewWrapper className="cta-node-wrapper" style={{ margin: '16px 0' }}>
+            <NodeViewWrapper className="cta-node-wrapper" style={{ margin: '16px 0', textAlign: editAlign }}>
               <Popover open={open} onOpenChange={(isOpen) => {
                   setOpen(isOpen)
                  
@@ -50,6 +54,7 @@ export default function CtaButtonView({ node, updateAttributes }: any) {
                       setEditHref(href)
                       setEditColor(color)
                       setEditVariant(variant)
+                      setEditAlign(align)
                   }
               }}>
                   <PopoverTrigger asChild>
@@ -59,8 +64,35 @@ export default function CtaButtonView({ node, updateAttributes }: any) {
                       </span>
                   </PopoverTrigger>
 
-                  <PopoverContent className="w-80 space-y-3 bg-white dark:bg-zinc-900">
+                  <PopoverContent className="w-80 space-y-4 bg-white dark:bg-zinc-900">
                       <p className="font-semibold text-sm">Configurer le CTA</p>
+
+                      <div className="flex gap-2 justify-center w-full">
+                         <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={editAlign === 'left' ? 'default' : 'outline'}
+                                  onClick={() => setEditAlign('left')}
+                              >
+                                  <AlignLeft/>
+                            </Button>
+                            <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={editAlign === 'center' ? 'default' : 'outline'}
+                                  onClick={() => setEditAlign('center')}
+                              >
+                                  <AlignCenter/>
+                              </Button>
+                              <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={editAlign === 'right' ? 'default' : 'outline'}
+                                  onClick={() => setEditAlign('right')}
+                              >
+                                  <AlignRight/>
+                              </Button>
+                      </div>
 
                       <div className="space-y-1">
                           <label className="text-xs text-muted-foreground">Texte du bouton</label>

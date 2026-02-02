@@ -51,7 +51,7 @@ useEffect(() => {
                 <label htmlFor="metadescription" className="font-semibold">Méta-description</label>
                 <Input name="metadescription" type="text" placeholder="Ajouter la méta-description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)}></Input>
                 <label htmlFor="metatitle" className="font-semibold">Méta-title</label>
-                <Input name="metatitle" type="text" placeholder="Ajouter le méta-titre (titre de l'article visible depuis Google)" value={metaTitle} onChange={(e) => setMetaDescription(e.target.value)}></Input>
+                <Input name="metatitle" type="text" placeholder="Ajouter le méta-titre (titre de l'article visible depuis Google)" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)}></Input>
                 <label htmlFor="content" className="font-semibold">Contenu de votre article</label>
                 <Input type="hidden" name="content" value={content}></Input>
                 <TiptapEditor onChange={setContent}/>
