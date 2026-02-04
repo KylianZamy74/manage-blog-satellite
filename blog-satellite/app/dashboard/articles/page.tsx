@@ -17,7 +17,8 @@ export default async function MyArticle() {
         <>
             <div className="flex flex-wrap gap-3">
                 {articles.map((article) => (
-                    <Card className="relative mx-auto w-full max-w-sm pt-0" key={article.id}>
+                    
+                    <Card className={`relative mx-auto w-full max-w-sm pt-0  ${article.status === 'DRAFT' ? ' border-2 border-amber-300' : 'border-2 border-green-500'}`} key={article.id}>
                         <img
                             src={article.image}
                             alt="Event cover"
@@ -28,9 +29,13 @@ export default async function MyArticle() {
                             <CardDescription>
                                 {article.excerpt}
                             </CardDescription>
+                            <span className={article.status === 'DRAFT' ? 'text-amber-700' : 'text-green-700'}>{article.status === 'DRAFT' ? 'Brouillon' : 'Publié'}</span>
                         </CardHeader>
                         <CardFooter>
                             <Button className="w-full bg-blue-400 cursor-pointer">Prévisualiser</Button>
+                        </CardFooter>
+                         <CardFooter>
+                            <Button className="w-full bg-blue-400 cursor-pointer">Publié</Button>
                         </CardFooter>
                         <CardFooter>
                             <Link href={`/dashboard/articles/${article.id}/edit/`} className="w-full bg-amber-400 cursor-pointer p-2 rounded-lg text-center text-white">Editer l&apos;article</Link>

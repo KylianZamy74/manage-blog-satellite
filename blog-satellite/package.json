@@ -31,6 +31,7 @@
     "next-auth": "5.0.0-beta.30",
     "next-cloudinary": "^6.17.5",
     "prisma": "6",
+    "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hotkeys-hook": "^5.2.3",

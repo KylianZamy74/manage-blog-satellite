@@ -21,8 +21,11 @@ function slugify(text: string) {
 
 function extractFirstImage(content: any) {
     if (!content) return null
-    if (content.type === 'imageResize' && content.attrs?.src) {
+    if (content.type === 'customImage' && content.attrs?.src) {
         return content.attrs.src
+    }
+    if(content.type === "imageGallery" && content.attrs?.images.length > 0 && content.attrs.images[0].src) {
+        return content.attrs.images[0].src
     }
 
     if (content.content && Array.isArray(content.content)) {
