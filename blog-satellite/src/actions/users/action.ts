@@ -1,6 +1,7 @@
 'use server'
 
 import {prisma} from "@/lib/prisma"
+import slugify from "@/lib/slugify"
 import { revalidatePath } from 'next/cache'
 
 interface ActionResult {
@@ -13,6 +14,9 @@ export async function createUser(prevState: ActionResult | null, formData: FormD
 
   const email = formData.get('email') as string
   const name = formData.get('name') as string
+
+  const slug = slugify(name)
+  
 
     if (!email) {
     return {success: false, message: "Cet email n'existe pas"}
@@ -31,6 +35,7 @@ try {
     data: {
       email,
       name,
+      slug,
       role: "CLIENT"
     }
   })

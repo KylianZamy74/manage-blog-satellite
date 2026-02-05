@@ -4,20 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { createArticleSchema } from "@/lib/schemas/article";
+import slugify from "@/lib/slugify";
 
 interface ArticleAction {
     success: boolean
     message: string
 }
-function slugify(text: string) {
-    if (!text)
-        return '';
-    let slug = text.toLowerCase().trim();
-    slug = slug.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    slug = slug.replace(/[^a-z0-9\s-]/g, ' ').trim();
-    slug = slug.replace(/[\s-]+/g, '-');
-    return slug;
-}
+
 
 function extractFirstImage(content: any) {
     if (!content) return null
