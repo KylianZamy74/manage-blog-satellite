@@ -5,29 +5,11 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { createArticleSchema } from "@/lib/schemas/article";
 import slugify from "@/lib/slugify";
+import { extractFirstImage } from "@/lib/extract-image";
 
 interface ArticleAction {
     success: boolean
     message: string
-}
-
-
-function extractFirstImage(content: any) {
-    if (!content) return null
-    if (content.type === 'customImage' && content.attrs?.src) {
-        return content.attrs.src
-    }
-    if(content.type === "imageGallery" && content.attrs?.images.length > 0 && content.attrs.images[0].src) {
-        return content.attrs.images[0].src
-    }
-
-    if (content.content && Array.isArray(content.content)) {
-        for (const node of content.content) {
-            const found = extractFirstImage(node)
-            if (found) return found
-        }
-    }
-    return null
 }
 
 
@@ -243,3 +225,18 @@ export async function saveDraft(id: string | null, data: { title, content, excer
             }
         }
     }
+
+    export async function publishArticle(id:string) {
+
+            const session = await auth()
+            const authorId = session?.user.id
+
+            if(!authorId) return {success: false, message: "Non authentifié"}
+
+            await prisma.article.update({
+                where: { id, authorId},
+                data: {status: "PUBLISHED", publishedAt: new Date()}
+            })
+            revalidatePath("/dashboard/articles")
+            return {success: true, message: "Article publié !"}
+        }
