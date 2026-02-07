@@ -6,16 +6,17 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { editArticle } from "@/actions/articles/action"
 import { useActionState } from "react"
-import { Article } from "@prisma/client"
- 
+import { Article, User } from "@prisma/client"
 
 
 interface ArticleFormProps {
     article: Article
+    users: User[]
+    isAdmin: boolean
 }
 
 
-export default function ArticleForm({article}: ArticleFormProps) {
+export default function ArticleForm({article, users, isAdmin}: ArticleFormProps) {
 
 const [content, setContent] = useState(JSON.stringify(article.content))
 const editArticleWithId = editArticle.bind(null, article.id)
@@ -36,6 +37,23 @@ const [state, formAction, isPending] = useActionState(editArticleWithId, null)
                 <label htmlFor="content" className="font-semibold">Contenu de votre article</label>
                 <Input type="hidden" name="content" value={content}></Input>
                 <TiptapEditor content={content} onChange={setContent}/>
+
+                {isAdmin && (
+                    <>
+                        <label htmlFor="assignedAuthorId" className="font-semibold">Assigner à un utilisateur</label>
+                        <select
+                            name="assignedAuthorId"
+                            defaultValue={article.assignedAuthorId ?? ""}
+                            className="p-2 border rounded"
+                        >
+                            <option value="">Aucun (reste à l&apos;admin)</option>
+                            {users.map((user) => (
+                                <option key={user.id} value={user.id}>{user.name}</option>
+                            ))}
+                        </select>
+                    </>
+                )}
+
                 <Button type="submit" className="cursor-pointer" disabled={isPending}>Modifier l&apos;article</Button>
             </form>
              {state && (

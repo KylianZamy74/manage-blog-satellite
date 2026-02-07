@@ -5,7 +5,7 @@ import { prisma } from "./prisma"
 
  
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any,
   providers: [
     Resend({
       apiKey: process.env.RESEND_API_KEY,
@@ -15,6 +15,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
    callbacks: 
    {
       async signIn({user}) {
+        if(!user.email) return false
         const existingUser = await prisma.user.findUnique({
           where: {email: user.email}
         })

@@ -1,7 +1,7 @@
-import { FileText, Home, PenSquare, Settings, List } from "lucide-react"
+import { FileText, Home, PenSquare, List } from "lucide-react"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
-
+import LogoutButton from "@/components/ui/LogoutButton"
 
 import {
     Sidebar,
@@ -47,13 +47,6 @@ const itemAdmin = [
     }
 ]
 
-const bottomItems = [
-    {
-        title: "Paramètres",
-        url: "/dashboard/settings",
-        icon: Settings,
-    },
-]
 
 export default async function AppSideBar() {
 
@@ -100,16 +93,9 @@ export default async function AppSideBar() {
 
             <SidebarFooter className="border-t">
                 <SidebarMenu>
-                    {bottomItems.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton asChild>
-                                <Link href={item.url}>
-                                    <item.icon className="size-4" />
-                                    <span>{item.title}</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    ))}
+                    <SidebarMenuItem>
+                        <LogoutButton />
+                    </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
         </Sidebar>

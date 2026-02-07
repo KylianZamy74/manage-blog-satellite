@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button"
 import {
     Card,
     CardDescription,
@@ -6,48 +5,96 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { getMyArticles} from "@/actions/articles/action"
+import { getMyArticles } from "@/actions/articles/action"
 import Link from "next/link"
+import { Eye, Pencil, Trash2, ImageOff } from "lucide-react"
 
 export default async function MyArticle() {
 
     const articles = await getMyArticles()
-    
+
+    if(!Array.isArray(articles)) {
+        return <p>Erreur lors du chargement des articles</p>
+    }
+
     return (
-        <>
-            <div className="flex flex-wrap gap-3">
+        <div className="p-6">
+            <div className="flex items-center justify-between mb-8">
+                <h1 className="text-2xl font-bold">Mes articles</h1>
+                <Link
+                    href="/dashboard/articles/new"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                    + Nouvel article
+                </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {articles.map((article) => (
-                    
-                    <Card className={`relative mx-auto w-full max-w-sm pt-0  ${article.status === 'DRAFT' ? ' border-2 border-amber-300' : 'border-2 border-green-500'}`} key={article.id}>
-                        <img
-                            src={article.image}
-                            alt="Event cover"
-                            className="relative z-20 aspect-video w-full object-cover  "
-                        />
+                    <Card
+                        className="group relative overflow-hidden pt-0 border transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+                        key={article.id}
+                    >
+                        {/* ── IMAGE COVER OU PLACEHOLDER ── */}
+                        {article.image ? (
+                            <img
+                                src={article.image}
+                                alt={article.title}
+                                className="aspect-video w-full object-cover"
+                            />
+                        ) : (
+                            <div className="aspect-video w-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                                <ImageOff className="h-10 w-10 text-slate-300" />
+                            </div>
+                        )}
+
+                        {/* ── BADGE STATUT ── */}
+                        <div className="absolute top-3 right-3">
+                            <span className={`
+                                px-2.5 py-1 rounded-full text-xs font-semibold
+                                ${article.status === 'DRAFT'
+                                    ? 'bg-amber-100 text-amber-700'
+                                    : 'bg-emerald-100 text-emerald-700'
+                                }
+                            `}>
+                                {article.status === 'DRAFT' ? 'Brouillon' : 'Publié'}
+                            </span>
+                        </div>
+
                         <CardHeader>
-                            <CardTitle>{article.title}</CardTitle>
-                            <CardDescription>
-                                {article.excerpt}
+                            <CardTitle className="line-clamp-1">{article.title}</CardTitle>
+                            <CardDescription className="line-clamp-2">
+                                {article.excerpt || "Aucun extrait"}
                             </CardDescription>
-                            <span className={article.status === 'DRAFT' ? 'text-amber-700' : 'text-green-700'}>{article.status === 'DRAFT' ? 'Brouillon' : 'Publié'}</span>
                         </CardHeader>
+
+                        {/* ── BOUTONS D'ACTION ── */}
                         <CardFooter>
-                            <Button className="w-full bg-blue-400 cursor-pointer">Prévisualiser</Button>
-                        </CardFooter>
-                         <CardFooter>
-                            <Button className="w-full bg-blue-400 cursor-pointer">Publié</Button>
-                        </CardFooter>
-                        <CardFooter>
-                            <Link href={`/dashboard/articles/${article.id}/edit/`} className="w-full bg-amber-400 cursor-pointer p-2 rounded-lg text-center text-white">Editer l&apos;article</Link>
-                        </CardFooter>
-                        <CardFooter>
-                            <Button className="w-full bg-red-500 cursor-pointer">Supprimer l&apos;article</Button>
+                            <div className="flex gap-2 w-full">
+                                <Link
+                                    href={`/dashboard/articles/${article.id}/preview/`}
+                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                    Preview
+                                </Link>
+                                <Link
+                                    href={`/dashboard/articles/${article.id}/edit/`}
+                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                    Editer
+                                </Link>
+                                <button
+                                    className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            </div>
                         </CardFooter>
                     </Card>
                 ))}
             </div>
-        </>
-
-
+        </div>
     )
 }

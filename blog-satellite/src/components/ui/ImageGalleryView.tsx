@@ -14,7 +14,7 @@ interface GalleryImage {
     width?: string
 }
 
-export default function ImageGalleryView({ node, updateAttributes, selected, deleteNode }: any) {
+export default function ImageGalleryView({ node, updateAttributes, selected, deleteNode, editor }: any) {
     const images: GalleryImage[] = node.attrs.images || []
     const columns: number = node.attrs.columns || 3
     const gap: number = node.attrs.gap || 8
@@ -91,32 +91,35 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
             data-type="imageGallery"
             style={{ margin: '16px 0', position: 'relative' }}
         >
-            <div
-                data-drag-handle
-                style={{
-                    position: 'absolute',
-                    top: -12,
-                    left: 0,
-                    background: 'rgba(0,0,0,0.5)',
-                    borderRadius: '4px',
-                    padding: '2px',
-                    cursor: 'grab',
-                    opacity: selected ? 1 : 0,
-                    transition: 'opacity 0.2s',
-                    zIndex: 10,
-                    display: 'flex',
-                    alignItems: 'center',
-                }}
-            >
-                <GripVertical style={{ width: 16, height: 16, color: 'white' }} />
-            </div>
+            {/* Drag handle : seulement en édition */}
+            {editor.isEditable && (
+                <div
+                    data-drag-handle
+                    style={{
+                        position: 'absolute',
+                        top: -12,
+                        left: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        borderRadius: '4px',
+                        padding: '2px',
+                        cursor: 'grab',
+                        opacity: selected ? 1 : 0,
+                        transition: 'opacity 0.2s',
+                        zIndex: 10,
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                >
+                    <GripVertical style={{ width: 16, height: 16, color: 'white' }} />
+                </div>
+            )}
 
             <div
                 style={{
                     display: 'grid',
                     gridTemplateColumns: `repeat(${columns}, 1fr)`,
                     gap: `${gap}px`,
-                    border: selected ? '2px solid #3b82f6' : '2px solid transparent',
+                    border: (selected && editor.isEditable) ? '2px solid #3b82f6' : '2px solid transparent',
                     borderRadius: '8px',
                     padding: '4px',
                     transition: 'border-color 0.2s',
@@ -138,7 +141,7 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                             draggable={false}
                         />
 
-                        {selected && (
+                        {selected && editor.isEditable && (
                             <>
                                 <button
                                     onClick={() => handleRemoveImage(index)}
@@ -200,7 +203,7 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                             </>
                         )}
 
-                        {editingAltIndex === index && (
+                        {editor.isEditable && editingAltIndex === index && (
                             <div
                                 style={{
                                     position: 'absolute',
@@ -237,7 +240,7 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                     </div>
                 ))}
 
-                <CldUploadWidget
+                {editor.isEditable && <CldUploadWidget
                     uploadPreset="blog_images"
                     onSuccess={(result) => {
                         if (typeof result.info === 'object' && result.info.secure_url) {
@@ -268,10 +271,10 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                             <span style={{ fontSize: '12px' }}>Ajouter</span>
                         </div>
                     )}
-                </CldUploadWidget>
+                </CldUploadWidget>}
             </div>
 
-            {selected && (
+            {selected && editor.isEditable && (
                 <div style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                     <Popover open={settingsOpen} onOpenChange={(isOpen) => {
                         setSettingsOpen(isOpen)

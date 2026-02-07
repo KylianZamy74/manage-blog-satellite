@@ -14,6 +14,10 @@ export default async function Users() {
 
     const data = await getUsers()
 
+    if (!Array.isArray(data)) {
+      return <p>Erreur lors du chargement des utilisateurs</p>
+    }
+
   return (
     <Table>
       <TableCaption>Liste des utilisateurs.</TableCaption>

@@ -22,103 +22,6 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-function createValidFormData(overrides: Record<string, string | null> = {}) {
-  const formData = new FormData()
-  formData.set('title', overrides.title ?? 'Mon Article Test')
-  formData.set('content', overrides.content ?? JSON.stringify({ type: 'doc', content: [{ type: 'paragraph' }] }))
-  formData.set('excerpt', overrides.excerpt ?? '')
-  formData.set('metadescription', overrides.metadescription ?? '')
-  formData.set('metatitle', overrides.metatitle ?? '')
-  return formData
-}
-
-describe('createArticle', () => {
-
-  test('retourne erreur si utilisateur non authentifié', async () => {
-    authMock.mockResolvedValue(null)
-
-    const { createArticle } = await import('./action')
-
-    const formData = createValidFormData()
-
-    const result = await createArticle(null, formData)
-
-    expect(result.success).toBe(false)
-    expect(result.message).toBe('Aucun utilisateur authentifié')
-  })
-
-  test('retourne erreur si titre trop court', async () => {
-    authMock.mockResolvedValue({ user: { id: 'user-123' } })
-
-    const { createArticle } = await import('./action')
-
-    const formData = createValidFormData({ title: 'ab' })
-
-    const result = await createArticle(null, formData)
-
-    expect(result.success).toBe(false)
-    expect(result.message).toContain('3')
-  })
-
-  test('retourne erreur si contenu invalide', async () => {
-    authMock.mockResolvedValue({ user: { id: 'user-123' } })
-
-    const { createArticle } = await import('./action')
-
-    const formData = createValidFormData({ content: '' })
-
-    const result = await createArticle(null, formData)
-
-    expect(result.success).toBe(false)
-  })
-
-  test('crée un article avec succès', async () => {
-    authMock.mockResolvedValue({ user: { id: 'user-123' } })
-
-    prismaMock.article.create.mockResolvedValue({
-      id: 'article-123',
-      title: 'Mon Article Test',
-      slug: 'mon-article-test',
-      content: { type: 'doc', content: [] },
-      excerpt: null,
-      image: null,
-      metaDescription: null,
-      metaTitle: null,
-      status: 'DRAFT',
-      authorId: 'user-123',
-      publishedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })
-
-    const { createArticle } = await import('./action')
-
-    const formData = createValidFormData()
-
-    const result = await createArticle(null, formData)
-
-    expect(result.success).toBe(true)
-    expect(prismaMock.article.create).toHaveBeenCalledTimes(1)
-  })
-
-  test('retourne erreur si slug déjà existant (P2002)', async () => {
-    authMock.mockResolvedValue({ user: { id: 'user-123' } })
-
-    const prismaError = new Error('Unique constraint') as any
-    prismaError.code = 'P2002'
-    prismaMock.article.create.mockRejectedValue(prismaError)
-
-    const { createArticle } = await import('./action')
-
-    const formData = createValidFormData()
-
-    const result = await createArticle(null, formData)
-
-    expect(result.success).toBe(false)
-    expect(result.message).toBe('Un article avec ce titre existe déjà')
-  })
-})
-
 describe('editArticle', () => {
 
   test('retourne erreur si utilisateur non authentifié', async () => {
@@ -136,8 +39,8 @@ describe('editArticle', () => {
     expect(result.message).toBe('Non authentifié')
   })
 
-  test('retourne erreur si article n\'appartient pas à l\'utilisateur', async () => {
-    authMock.mockResolvedValue({ user: { id: 'user-123' } })
+  test('retourne erreur si article n\'appartient pas à l\'utilisateur (CLIENT)', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
 
     prismaMock.article.findUnique.mockResolvedValue({
       id: 'article-123',
@@ -167,8 +70,71 @@ describe('editArticle', () => {
     expect(result.message).toBe('Non autorisé')
   })
 
+  test('admin peut éditer un draft d\'un autre utilisateur', async () => {
+    authMock.mockResolvedValue({ user: { id: 'admin-123', role: 'ADMIN' } })
+
+    prismaMock.article.findUnique.mockResolvedValue({
+      id: 'article-123',
+      authorId: 'autre-user',
+      title: 'Article',
+      slug: 'article',
+      content: {},
+      excerpt: null,
+      image: null,
+      metaDescription: null,
+      metaTitle: null,
+      status: 'DRAFT',
+      publishedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })
+
+    prismaMock.article.update.mockResolvedValue({} as any)
+
+    const { editArticle } = await import('./action')
+
+    const formData = new FormData()
+    formData.set('title', 'Titre modifié')
+    formData.set('content', JSON.stringify({ type: 'doc', content: [] }))
+
+    const result = await editArticle('article-123', null, formData)
+
+    expect(result.success).toBe(true)
+  })
+
+  test('admin ne peut pas éditer un article publié d\'un autre utilisateur', async () => {
+    authMock.mockResolvedValue({ user: { id: 'admin-123', role: 'ADMIN' } })
+
+    prismaMock.article.findUnique.mockResolvedValue({
+      id: 'article-123',
+      authorId: 'autre-user',
+      title: 'Article',
+      slug: 'article',
+      content: {},
+      excerpt: null,
+      image: null,
+      metaDescription: null,
+      metaTitle: null,
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })
+
+    const { editArticle } = await import('./action')
+
+    const formData = new FormData()
+    formData.set('title', 'Titre modifié')
+    formData.set('content', JSON.stringify({ type: 'doc', content: [] }))
+
+    const result = await editArticle('article-123', null, formData)
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe('Non autorisé')
+  })
+
   test('modifie un article avec succès', async () => {
-    authMock.mockResolvedValue({ user: { id: 'user-123' } })
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
 
     prismaMock.article.findUnique.mockResolvedValue({
       id: 'article-123',
@@ -228,8 +194,8 @@ describe('deleteArticle', () => {
     expect(result.message).toBe('Non authentifié')
   })
 
-  test('retourne erreur si article n\'appartient pas à l\'utilisateur', async () => {
-    authMock.mockResolvedValue({ user: { id: 'user-123' } })
+  test('retourne erreur si article n\'appartient pas à l\'utilisateur (CLIENT)', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
 
     prismaMock.article.findUnique.mockResolvedValue({
       id: 'article-123',
@@ -255,8 +221,36 @@ describe('deleteArticle', () => {
     expect(result.message).toBe('Non autorisé')
   })
 
+  test('admin peut supprimer un draft d\'un autre utilisateur', async () => {
+    authMock.mockResolvedValue({ user: { id: 'admin-123', role: 'ADMIN' } })
+
+    prismaMock.article.findUnique.mockResolvedValue({
+      id: 'article-123',
+      authorId: 'autre-user',
+      title: 'Article',
+      slug: 'article',
+      content: {},
+      excerpt: null,
+      image: null,
+      metaDescription: null,
+      metaTitle: null,
+      status: 'DRAFT',
+      publishedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })
+
+    prismaMock.article.delete.mockResolvedValue({} as any)
+
+    const { deleteArticle } = await import('./action')
+
+    const result = await deleteArticle('article-123')
+
+    expect(result.success).toBe(true)
+  })
+
   test('supprime un article avec succès', async () => {
-    authMock.mockResolvedValue({ user: { id: 'user-123' } })
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
 
     prismaMock.article.findUnique.mockResolvedValue({
       id: 'article-123',
@@ -411,8 +405,14 @@ describe('publishArticle', () => {
     expect(result.message).toBe('Non authentifié')
   })
 
-  test('publie un article avec succès', async () => {
-    authMock.mockResolvedValue({ user: { id: 'user-123' } })
+  test('publie un article avec succès (propriétaire)', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
+
+    prismaMock.article.findUnique.mockResolvedValue({
+      id: 'article-123',
+      authorId: 'user-123',
+      status: 'DRAFT'
+    } as any)
 
     prismaMock.article.update.mockResolvedValue({
       id: 'article-123',
@@ -427,8 +427,43 @@ describe('publishArticle', () => {
     expect(result.success).toBe(true)
     expect(result.message).toBe('Article publié !')
     expect(prismaMock.article.update).toHaveBeenCalledWith({
-      where: { id: 'article-123', authorId: 'user-123' },
+      where: { id: 'article-123' },
       data: { status: 'PUBLISHED', publishedAt: expect.any(Date) }
     })
+  })
+
+  test('admin peut publier un draft d\'un autre utilisateur', async () => {
+    authMock.mockResolvedValue({ user: { id: 'admin-123', role: 'ADMIN' } })
+
+    prismaMock.article.findUnique.mockResolvedValue({
+      id: 'article-123',
+      authorId: 'autre-user',
+      status: 'DRAFT'
+    } as any)
+
+    prismaMock.article.update.mockResolvedValue({} as any)
+
+    const { publishArticle } = await import('./action')
+
+    const result = await publishArticle('article-123')
+
+    expect(result.success).toBe(true)
+  })
+
+  test('client ne peut pas publier article d\'un autre', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
+
+    prismaMock.article.findUnique.mockResolvedValue({
+      id: 'article-123',
+      authorId: 'autre-user',
+      status: 'DRAFT'
+    } as any)
+
+    const { publishArticle } = await import('./action')
+
+    const result = await publishArticle('article-123')
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe('Non autorisé')
   })
 })

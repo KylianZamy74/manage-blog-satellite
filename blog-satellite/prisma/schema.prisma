@@ -58,20 +58,21 @@ model User {
 }
 
 model Article {
-  id          String    @id @default(cuid())
-  title       String
-  slug        String
-  content     Json
-  excerpt     String?
-  metaDescription String?
-  metaTitle     String?
-  image       String?
-  status      Status    @default(DRAFT)
-  authorId    String
-  publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  title            String
+  slug             String
+  content          Json
+  excerpt          String?
+  metaDescription  String?
+  metaTitle        String?
+  image            String?
+  status           Status    @default(DRAFT)
+  authorId         String
+  assignedAuthorId String?
+  publishedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  author           User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@unique([authorId, slug])
 }
