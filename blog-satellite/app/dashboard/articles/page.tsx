@@ -7,7 +7,10 @@ import {
 } from "@/components/ui/card"
 import { getMyArticles } from "@/actions/articles/action"
 import Link from "next/link"
-import { Eye, Pencil, Trash2, ImageOff } from "lucide-react"
+import { Eye, Pencil, ImageOff } from "lucide-react"
+import DeleteButton from "@/components/ui/DeleteButton"
+import UnpublishButton from "@/components/ui/UnpublishButton"
+
 
 export default async function MyArticle() {
 
@@ -16,6 +19,8 @@ export default async function MyArticle() {
     if(!Array.isArray(articles)) {
         return <p>Erreur lors du chargement des articles</p>
     }
+
+    
 
     return (
         <div className="p-6">
@@ -70,26 +75,27 @@ export default async function MyArticle() {
 
                         {/* ── BOUTONS D'ACTION ── */}
                         <CardFooter>
-                            <div className="flex gap-2 w-full">
-                                <Link
-                                    href={`/dashboard/articles/${article.id}/preview/`}
-                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
-                                >
-                                    <Eye className="h-4 w-4" />
-                                    Preview
-                                </Link>
-                                <Link
-                                    href={`/dashboard/articles/${article.id}/edit/`}
-                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
-                                >
-                                    <Pencil className="h-4 w-4" />
-                                    Editer
-                                </Link>
-                                <button
-                                    className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </button>
+                            <div className="flex flex-col gap-2 w-full">
+                                <div className="flex gap-2 w-full">
+                                    <Link
+                                        href={`/dashboard/articles/${article.id}/preview/`}
+                                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                        Preview
+                                    </Link>
+                                    <Link
+                                        href={`/dashboard/articles/${article.id}/edit/`}
+                                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                        Editer
+                                    </Link>
+                                    <DeleteButton articleId={article.id} />
+                                </div>
+                                {article.status === 'PUBLISHED' && (
+                                    <UnpublishButton articleId={article.id} />
+                                )}
                             </div>
                         </CardFooter>
                     </Card>

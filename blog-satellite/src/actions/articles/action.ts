@@ -86,6 +86,37 @@ export async function deleteArticle(id: string) {
     }
 }
 
+export async function unpublishArticle(id: string) {
+
+    const session = await auth()
+    if (!session?.user.id) {
+        return { success: false, message: "Non authentifié" }
+    }
+
+    const article = await prisma.article.findUnique({ where: { id } })
+    if (!article) {
+        return { success: false, message: "Article non trouvé" }
+    }
+    if (article.authorId !== session.user.id && session.user.role !== 'ADMIN') {
+        return { success: false, message: "Non autorisé" }
+    }
+    if (article.status !== 'PUBLISHED') {
+        return { success: false, message: "L'article n'est pas publié" }
+    }
+
+    try {
+        await prisma.article.update({
+            where: { id },
+            data: { status: 'DRAFT' }
+        })
+        revalidatePath("/dashboard/articles")
+        return { success: true, message: "L'article a été dépublié avec succès" }
+    } catch (error) {
+        console.error(error)
+        return { success: false, message: "Echec lors de la dépublication de l'article" }
+    }
+}
+
 export async function getArticles() {
 
     try {
@@ -143,8 +174,6 @@ export async function saveDraft(id: string | null, data: { title: string, conten
     if (!session?.user?.id) {
         return ({ success: false, message: "Aucun utilisateur authentifié" })
     }
-    // Le brouillon appartient TOUJOURS à l'admin connecté
-    // L'utilisateur assigné est stocké séparément et sera transféré à la publication
     const authorId = session.user.id
     const assignedAuthorId = data.authorIdFromForm || null
 
@@ -208,7 +237,6 @@ export async function saveDraft(id: string | null, data: { title: string, conten
                 return { success: false, message: "Non autorisé" }
             }
 
-            // À la publication, transférer l'ownership à l'utilisateur assigné (si défini)
             const newAuthorId = article.assignedAuthorId || article.authorId
 
             await prisma.article.update({
