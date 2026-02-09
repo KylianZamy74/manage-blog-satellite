@@ -3,11 +3,10 @@
 import { useState } from "react"
 import TiptapEditor from "@/components/ui/TiptapEditor"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { editArticle } from "@/actions/articles/action"
 import { useActionState } from "react"
 import { Article, User } from "@prisma/client"
-
+import { ChevronDown, FileText, Search, UserPlus, CheckCircle, XCircle } from "lucide-react"
 
 interface ArticleFormProps {
     article: Article
@@ -15,53 +14,136 @@ interface ArticleFormProps {
     isAdmin: boolean
 }
 
+export default function ArticleForm({ article, users, isAdmin }: ArticleFormProps) {
 
-export default function ArticleForm({article, users, isAdmin}: ArticleFormProps) {
+    const [content, setContent] = useState(JSON.stringify(article.content))
+    const [showSeo, setShowSeo] = useState(false)
+    const editArticleWithId = editArticle.bind(null, article.id)
+    const [state, formAction, isPending] = useActionState(editArticleWithId, null)
 
-const [content, setContent] = useState(JSON.stringify(article.content))
-const editArticleWithId = editArticle.bind(null, article.id)
-const [state, formAction, isPending] = useActionState(editArticleWithId, null)
+    return (
+        <form action={formAction} className="max-w-4xl mx-auto space-y-6">
+            {/* Message de retour */}
+            {state && (
+                <div className={`flex items-center gap-2 text-sm px-4 py-3 rounded-lg ${state.success ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+                    {state.success ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                    {state.message}
+                </div>
+            )}
 
+            {/* Section principale */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 space-y-5">
+                <div className="space-y-2">
+                    <label htmlFor="title" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-400" />
+                        Titre de l&apos;article
+                    </label>
+                    <Input
+                        id="title"
+                        name="title"
+                        type="text"
+                        placeholder="Ajouter le titre de l'article"
+                        defaultValue={article.title}
+                        className="text-lg"
+                    />
+                </div>
 
-    return(
-        <>
-            <form action={formAction} className="space-y-2 flex flex-col">
-                <label htmlFor="title"  className="font-semibold">Titre de l&apos;article</label>
-                <Input name="title" type="text" placeholder="Ajouter le titre de l'article" defaultValue={article.title}></Input>
-                <label htmlFor="excerpt" className="font-semibold">Courte description de l&apos;article</label>
-                <Input name="excerpt" type="text" placeholder="Court résumé de votre article de blog" defaultValue={article.excerpt ?? ""}></Input>
-                <label htmlFor="metadescription" className="font-semibold">Méta-description</label>
-                <Input name="metadescription" type="text" placeholder="Ajouter la méta-description" defaultValue={article.metaDescription ?? ""}></Input>
-                <label htmlFor="metatitle" className="font-semibold">Méta-title</label>
-                <Input name="metatitle" type="text" placeholder="Ajouter le méta-titre (titre de l'article visible depuis Google)" defaultValue={article.metaTitle ?? ""}></Input>
-                <label htmlFor="content" className="font-semibold">Contenu de votre article</label>
-                <Input type="hidden" name="content" value={content}></Input>
-                <TiptapEditor content={content} onChange={setContent}/>
+                <div className="space-y-2">
+                    <label htmlFor="excerpt" className="text-sm font-medium text-gray-700">
+                        Courte description
+                    </label>
+                    <Input
+                        id="excerpt"
+                        name="excerpt"
+                        type="text"
+                        placeholder="Court résumé de votre article de blog"
+                        defaultValue={article.excerpt ?? ""}
+                    />
+                </div>
 
-                {isAdmin && (
-                    <>
-                        <label htmlFor="assignedAuthorId" className="font-semibold">Assigner à un utilisateur</label>
-                        <select
-                            name="assignedAuthorId"
-                            defaultValue={article.assignedAuthorId ?? ""}
-                            className="p-2 border rounded"
-                        >
-                            <option value="">Aucun (reste à l&apos;admin)</option>
-                            {users.map((user) => (
-                                <option key={user.id} value={user.id}>{user.name}</option>
-                            ))}
-                        </select>
-                    </>
+                <div className="space-y-2">
+                    <label htmlFor="content" className="text-sm font-medium text-gray-700">
+                        Contenu
+                    </label>
+                    <Input type="hidden" name="content" value={content} />
+                    <TiptapEditor content={content} onChange={setContent} />
+                </div>
+            </div>
+
+            {/* Section SEO (dépliable) */}
+            <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <button
+                    type="button"
+                    onClick={() => setShowSeo(!showSeo)}
+                    className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                >
+                    <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <Search className="h-4 w-4 text-gray-400" />
+                        Référencement SEO
+                    </span>
+                    <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showSeo ? "rotate-180" : ""}`} />
+                </button>
+                {showSeo && (
+                    <div className="px-6 pb-6 space-y-4 border-t pt-4">
+                        <div className="space-y-2">
+                            <label htmlFor="metatitle" className="text-sm font-medium text-gray-700">
+                                Méta-titre
+                            </label>
+                            <Input
+                                id="metatitle"
+                                name="metatitle"
+                                type="text"
+                                placeholder="Titre visible dans les résultats Google"
+                                defaultValue={article.metaTitle ?? ""}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="metadescription" className="text-sm font-medium text-gray-700">
+                                Méta-description
+                            </label>
+                            <Input
+                                id="metadescription"
+                                name="metadescription"
+                                type="text"
+                                placeholder="Description visible dans les résultats Google"
+                                defaultValue={article.metaDescription ?? ""}
+                            />
+                        </div>
+                    </div>
                 )}
+            </div>
 
-                <Button type="submit" className="cursor-pointer" disabled={isPending}>Modifier l&apos;article</Button>
-            </form>
-             {state && (
-                    <p className={state.success ? "text-green-400" : "text-red-400"}>{state.message}</p>
-                )}
-        <pre className="mt-4 p-4 bg-gray-100 text-xs overflow-auto max-h-[200px]">
-          {content}
-        </pre>
-        </>
+            {/* Section Admin - Assignation */}
+            {isAdmin && (
+                <div className="bg-white rounded-xl border shadow-sm p-6 space-y-3">
+                    <label htmlFor="assignedAuthorId" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <UserPlus className="h-4 w-4 text-gray-400" />
+                        Assigner à un utilisateur
+                    </label>
+                    <select
+                        id="assignedAuthorId"
+                        name="assignedAuthorId"
+                        defaultValue={article.assignedAuthorId ?? ""}
+                        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="">Aucun (reste à l&apos;admin)</option>
+                        {users.map((user) => (
+                            <option key={user.id} value={user.id}>{user.name}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
+            {/* Bouton soumettre */}
+            <div className="pb-8">
+                <button
+                    type="submit"
+                    disabled={isPending}
+                    className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium py-3 px-6 rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed"
+                >
+                    {isPending ? "Modification en cours..." : "Modifier l'article"}
+                </button>
+            </div>
+        </form>
     )
 }

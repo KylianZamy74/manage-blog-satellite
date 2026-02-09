@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { saveDraft } from "@/actions/articles/action"
 import { User } from "@prisma/client"
 import Link from "next/link"
+import { Save, Eye, ChevronDown, FileText, Search, UserPlus } from "lucide-react"
 
 interface ArticleFormProps {
     users: User[]
@@ -22,6 +23,7 @@ export default function ArticleForm({ users, isAdmin }: ArticleFormProps) {
     const [metaDescription, setMetaDescription] = useState("")
     const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
+    const [showSeo, setShowSeo] = useState(false)
 
     const save = useCallback(async () => {
         if (!title && !content) return
@@ -67,48 +69,142 @@ export default function ArticleForm({ users, isAdmin }: ArticleFormProps) {
     }
 
     return (
-        <>
-            <div className="space-y-2 flex flex-col">
-                <label htmlFor="title" className="font-semibold">Titre de l&apos;article</label>
-                <Input name="title" type="text" placeholder="Ajouter le titre de l'article" value={title} onChange={(e) => setTitle(e.target.value)} />
-                <label htmlFor="excerpt" className="font-semibold">Courte description de l&apos;article</label>
-                <Input name="excerpt" type="text" placeholder="Court résumé de votre article de blog" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
-                <label htmlFor="metadescription" className="font-semibold">Méta-description</label>
-                <Input name="metadescription" type="text" placeholder="Ajouter la méta-description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
-                <label htmlFor="metatitle" className="font-semibold">Méta-title</label>
-                <Input name="metatitle" type="text" placeholder="Ajouter le méta-titre (titre de l'article visible depuis Google)" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} />
-                <label htmlFor="content" className="font-semibold">Contenu de votre article</label>
-                <TiptapEditor onChange={setContent} />
+        <div className="max-w-4xl mx-auto space-y-6">
+            {/* Indicateur de sauvegarde */}
+            {isSaving && (
+                <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
+                    <Save className="h-4 w-4 animate-pulse" />
+                    Sauvegarde en cours...
+                </div>
+            )}
 
-                {isAdmin && (
+            {/* Section principale */}
+            <div className="bg-white rounded-xl border shadow-sm p-6 space-y-5">
+                <div className="space-y-2">
+                    <label htmlFor="title" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-400" />
+                        Titre de l&apos;article
+                    </label>
+                    <Input
+                        id="title"
+                        name="title"
+                        type="text"
+                        placeholder="Ajouter le titre de l'article"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        className="text-lg"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label htmlFor="excerpt" className="text-sm font-medium text-gray-700">
+                        Courte description
+                    </label>
+                    <Input
+                        id="excerpt"
+                        name="excerpt"
+                        type="text"
+                        placeholder="Court résumé de votre article de blog"
+                        value={excerpt}
+                        onChange={(e) => setExcerpt(e.target.value)}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label htmlFor="content" className="text-sm font-medium text-gray-700">
+                        Contenu
+                    </label>
+                    <TiptapEditor onChange={setContent} />
+                </div>
+            </div>
+
+            {/* Section SEO (dépliable) */}
+            <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <button
+                    type="button"
+                    onClick={() => setShowSeo(!showSeo)}
+                    className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                >
+                    <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <Search className="h-4 w-4 text-gray-400" />
+                        Référencement SEO
+                    </span>
+                    <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showSeo ? "rotate-180" : ""}`} />
+                </button>
+                {showSeo && (
+                    <div className="px-6 pb-6 space-y-4 border-t pt-4">
+                        <div className="space-y-2">
+                            <label htmlFor="metatitle" className="text-sm font-medium text-gray-700">
+                                Méta-titre
+                            </label>
+                            <Input
+                                id="metatitle"
+                                name="metatitle"
+                                type="text"
+                                placeholder="Titre visible dans les résultats Google"
+                                value={metaTitle}
+                                onChange={(e) => setMetaTitle(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="metadescription" className="text-sm font-medium text-gray-700">
+                                Méta-description
+                            </label>
+                            <Input
+                                id="metadescription"
+                                name="metadescription"
+                                type="text"
+                                placeholder="Description visible dans les résultats Google"
+                                value={metaDescription}
+                                onChange={(e) => setMetaDescription(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Section Admin - Assignation */}
+            {isAdmin && (
+                <div className="bg-white rounded-xl border shadow-sm p-6 space-y-3">
+                    <label htmlFor="authorId" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <UserPlus className="h-4 w-4 text-gray-400" />
+                        Assigner à un utilisateur
+                    </label>
                     <select
+                        id="authorId"
                         name="authorId"
                         value={selectedAuthorId || ""}
                         onChange={handleAuthorChange}
-                        className="p-2 border rounded"
+                        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                         <option value="">Sélectionner un utilisateur</option>
                         {users.map((user) => (
                             <option key={user.id} value={user.id}>{user.name}</option>
                         ))}
                     </select>
-                )}
+                </div>
+            )}
 
-                {isSaving && <p className="text-gray-500">Sauvegarde en cours...</p>}
-
+            {/* Bouton preview */}
+            <div className="pb-8">
                 {draftId ? (
-                    <Link href={`/dashboard/articles/${draftId}/preview`} className="cursor-pointer bg-amber-900 rounded-lg p-4 text-white text-center">
+                    <Link
+                        href={`/dashboard/articles/${draftId}/preview`}
+                        className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-xl transition-colors"
+                    >
+                        <Eye className="h-4 w-4" />
                         Prévisualiser votre article
                     </Link>
                 ) : (
-                    <button disabled className="bg-gray-400 p-4 rounded-lg text-white">
+                    <button
+                        disabled
+                        className="flex items-center justify-center gap-2 w-full bg-gray-200 text-gray-400 font-medium py-3 px-6 rounded-xl cursor-not-allowed"
+                    >
+                        <Eye className="h-4 w-4" />
                         Prévisualiser votre article
                     </button>
                 )}
             </div>
-            <pre className="mt-4 p-4 bg-gray-100 text-xs overflow-auto max-h-[200px]">
-                {content}
-            </pre>
-        </>
+        </div>
     )
 }
