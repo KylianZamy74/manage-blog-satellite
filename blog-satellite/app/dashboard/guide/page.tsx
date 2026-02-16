@@ -350,6 +350,15 @@ export default function GuidePage() {
                             Mais attention, chaque image doit avoir un <strong>texte alternatif</strong> (alt text).
                         </p>
 
+                        <div className="rounded-xl bg-red-50 border border-red-200/60 p-5">
+                            <p className="font-medium text-red-800">🚨 Toujours importer depuis votre ordinateur</p>
+                            <p className="text-sm text-red-700 mt-1">
+                                Utilisez <strong>uniquement le bouton d&apos;import</strong> (icône image dans la barre d&apos;outils) pour ajouter vos images.
+                                Ne faites <strong>jamais de copier-coller</strong> d&apos;image directement dans l&apos;éditeur.
+                                Le copier-coller peut provoquer des erreurs d&apos;affichage car l&apos;image n&apos;est pas hébergée correctement.
+                            </p>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="rounded-xl bg-gray-50 border border-gray-200 p-5">
                                 <p className="font-medium text-gray-800 mb-2">📊 Quantité</p>

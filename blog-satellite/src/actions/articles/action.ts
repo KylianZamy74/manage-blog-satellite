@@ -213,7 +213,7 @@ export async function saveDraft(id: string | null, data: { title: string, conten
             try {
                 await prisma.article.update({
                     where: { id },
-                    data: { title: data.title, content: JSON.parse(data.content), excerpt: data.excerpt, image: coverImage, assignedAuthorId, metaDescription: data.metaDescription }
+                    data: { title: data.title, content: JSON.parse(data.content), slug, excerpt: data.excerpt, image: coverImage, assignedAuthorId, metaDescription: data.metaDescription, metaTitle: data.metaTitle }
                 })
                 revalidatePath("/dashboard/articles")
                 return { success: true, message: "Modification de l'article effectué avec succès" }

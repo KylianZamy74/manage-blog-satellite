@@ -193,6 +193,11 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                     </Button>
                 </div>
 
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border-b border-amber-200/60 text-xs text-amber-700">
+                    <span>⚠️</span>
+                    <span>Images : utilisez le bouton d&apos;import (icône 🖼️). Ne pas copier-coller d&apos;image directement.</span>
+                </div>
+
                 <EditorContent
                     editor={editor}
                     className="p-4 min-h-[300px]"

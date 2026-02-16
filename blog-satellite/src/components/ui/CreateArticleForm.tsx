@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { useRouter } from "next/navigation"
 import TiptapEditor from "@/components/ui/TiptapEditor"
 import { Input } from "@/components/ui/input"
 import { saveDraft } from "@/actions/articles/action"
 import { User } from "@prisma/client"
-import Link from "next/link"
 import { Save, Eye, ChevronDown, FileText, Search, UserPlus } from "lucide-react"
 
 interface ArticleFormProps {
@@ -15,6 +15,7 @@ interface ArticleFormProps {
 
 export default function ArticleForm({ users, isAdmin }: ArticleFormProps) {
 
+    const router = useRouter()
     const [content, setContent] = useState('')
     const [draftId, setDraftId] = useState<string | null>(null)
     const [title, setTitle] = useState("")
@@ -24,6 +25,22 @@ export default function ArticleForm({ users, isAdmin }: ArticleFormProps) {
     const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
     const [showSeo, setShowSeo] = useState(false)
+
+    // Ref pour avoir toujours les dernières valeurs (évite les closures stale au unmount)
+    const latestRef = useRef({ draftId, title, content, excerpt, selectedAuthorId, metaDescription, metaTitle })
+    useEffect(() => {
+        latestRef.current = { draftId, title, content, excerpt, selectedAuthorId, metaDescription, metaTitle }
+    }, [draftId, title, content, excerpt, selectedAuthorId, metaDescription, metaTitle])
+
+    // Flag pour savoir si des changements sont en attente de sauvegarde
+    const hasUnsavedChanges = useRef(false)
+    const lastSavedContent = useRef('')
+
+    useEffect(() => {
+        if (content && content !== lastSavedContent.current) {
+            hasUnsavedChanges.current = true
+        }
+    }, [content, title, excerpt, metaDescription, metaTitle])
 
     const save = useCallback(async () => {
         if (!title && !content) return
@@ -40,14 +57,38 @@ export default function ArticleForm({ users, isAdmin }: ArticleFormProps) {
         if (result?.success && result?.id && !draftId) {
             setDraftId(result.id)
         }
+        hasUnsavedChanges.current = false
+        lastSavedContent.current = content
         setIsSaving(false)
+        return result
     }, [draftId, title, content, excerpt, selectedAuthorId, metaDescription, metaTitle])
 
+    // Auto-save avec debounce de 5s
     useEffect(() => {
         if (!title && !content) return
         const timer = setTimeout(save, 5000)
         return () => clearTimeout(timer)
     }, [title, content, excerpt, metaDescription, metaTitle, save])
+
+    // Sauvegarde immédiate avant de quitter la page (navigation interne ou fermeture)
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges.current) {
+                e.preventDefault()
+            }
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [])
+
+    // Sauvegarde immédiate puis navigation vers le preview
+    const handlePreview = async () => {
+        if (!draftId) return
+        if (hasUnsavedChanges.current) {
+            await save()
+        }
+        router.push(`/dashboard/articles/${draftId}/preview`)
+    }
 
     const handleAuthorChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newAuthorId = e.target.value || null
@@ -188,13 +229,15 @@ export default function ArticleForm({ users, isAdmin }: ArticleFormProps) {
             {/* Bouton preview */}
             <div className="pb-8">
                 {draftId ? (
-                    <Link
-                        href={`/dashboard/articles/${draftId}/preview`}
-                        className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-xl transition-colors"
+                    <button
+                        type="button"
+                        onClick={handlePreview}
+                        disabled={isSaving}
+                        className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-6 rounded-xl transition-colors cursor-pointer disabled:cursor-wait"
                     >
                         <Eye className="h-4 w-4" />
-                        Prévisualiser votre article
-                    </Link>
+                        {isSaving ? "Sauvegarde avant prévisualisation..." : "Prévisualiser votre article"}
+                    </button>
                 ) : (
                     <button
                         disabled
