@@ -524,13 +524,21 @@ export default function GuidePage() {
                                    - <strong className="text-white">À jour</strong> : une donnée vraie mais obsolète est aussi trompeuse qu&apos;un chiffre inventé. Vérifie que chaque donnée externe correspond aux conditions en vigueur AU MOMENT de la rédaction (ex : les commissions Airbnb changent régulièrement, la réglementation locale évolue)<br />
                                    - <strong className="text-white">Sourcées implicitement</strong> : précise dans le texte d&apos;où vient l&apos;info (ex : &quot;selon le Comité Régional du Tourisme&quot;, &quot;donnée publique Airbnb&quot;)</p>
                                 <p>   ⚠️ Exemples interdits : &quot;Un T2 rapporte entre 800 et 1 500 €/mois&quot; (inventé), &quot;commission hôte Airbnb de 3 %&quot; (obsolète depuis fin 2025), faux témoignages ou citations.</p>
-                                <p>9. Ton professionnel, accessible, orienté conversion. Pas d&apos;emojis. Pas de tiret long (em dash).</p>
+                                <p>9. <strong className="text-white">Ton dynamique et orienté conversion.</strong> Le but de l&apos;article est de CONVERTIR le lecteur en client, pas de l&apos;endormir. Règles :</p>
+                                <p>   - Phrases courtes et percutantes (1 à 2 lignes max). Coupe les phrases longues en deux.<br />
+                                   - Varie les formats dans chaque section : paragraphes, listes à puces, sous-titres, phrases d&apos;accroche en gras. Pas de pavés de 10 lignes.<br />
+                                   - Le premier paragraphe doit poser un problème concret que le lecteur reconnaît. Pas de bla-bla introductif.<br />
+                                   - Chaque H2 doit donner envie de continuer (formule-les comme des promesses ou des questions).<br />
+                                   - Si une phrase n&apos;apporte pas d&apos;info ou ne fait pas avancer le lecteur vers l&apos;action, supprime-la.<br />
+                                   - Ton professionnel et accessible. Pas d&apos;emojis. Pas de jargon non expliqué.</p>
                                 <p>10. N&apos;utilise jamais de tiret long &quot;—&quot; ni de tiret moyen &quot;–&quot;. Remplace par une virgule ou un point.</p>
+                                <p>11. <strong className="text-white">À la fin, compte le nombre de mots de l&apos;article</strong> (hors métadonnées). Si c&apos;est en dessous de 2000 mots, enrichis le contenu. Si c&apos;est au-dessus de 2250, resserre. Indique le nombre de mots final.</p>
 
                                 <p><strong className="text-white">Fournis aussi :</strong></p>
                                 <p>- Un Meta Title (max 60 caractères) avec le mot-clé principal<br />
                                 - Une Meta Description (max 155 caractères) incitative<br />
-                                - Une courte description (max 150 caractères) pour la carte article du catalogue</p>
+                                - Une courte description (max 150 caractères) pour la carte article du catalogue<br />
+                                - Le <strong className="text-white">nombre de mots</strong> de l&apos;article</p>
                             </div>
                         </div>
 
