@@ -519,7 +519,11 @@ export default function GuidePage() {
                                    - Un texte alternatif (alt text) en français, descriptif et optimisé SEO : décris ce que montre l&apos;image en intégrant naturellement un mot-clé ou la localisation. Pas de keyword stuffing.<br />
                                    - L&apos;emplacement exact dans l&apos;article</p>
                                 <p>7. Termine par une FAQ de 4 à 6 questions que les gens tapent vraiment sur Google. Réponses courtes (3-5 lignes).</p>
-                                <p>8. N&apos;invente AUCUNE information, AUCUN chiffre, AUCUN témoignage. Les données externes doivent être factuelles et vérifiables.</p>
+                                <p>8. N&apos;invente AUCUNE information, AUCUN chiffre, AUCUN témoignage. Les données externes (commissions Airbnb/Booking, stats touristiques, données réglementaires...) doivent être :</p>
+                                <p>   - <strong className="text-white">Factuelles</strong> : issues de sources publiques et vérifiables (sites officiels des plateformes, organismes publics, etc.)<br />
+                                   - <strong className="text-white">À jour</strong> : une donnée vraie mais obsolète est aussi trompeuse qu&apos;un chiffre inventé. Vérifie que chaque donnée externe correspond aux conditions en vigueur AU MOMENT de la rédaction (ex : les commissions Airbnb changent régulièrement, la réglementation locale évolue)<br />
+                                   - <strong className="text-white">Sourcées implicitement</strong> : précise dans le texte d&apos;où vient l&apos;info (ex : &quot;selon le Comité Régional du Tourisme&quot;, &quot;donnée publique Airbnb&quot;)</p>
+                                <p>   ⚠️ Exemples interdits : &quot;Un T2 rapporte entre 800 et 1 500 €/mois&quot; (inventé), &quot;commission hôte Airbnb de 3 %&quot; (obsolète depuis fin 2025), faux témoignages ou citations.</p>
                                 <p>9. Ton professionnel, accessible, orienté conversion. Pas d&apos;emojis. Pas de tiret long (em dash).</p>
                                 <p>10. N&apos;utilise jamais de tiret long &quot;—&quot; ni de tiret moyen &quot;–&quot;. Remplace par une virgule ou un point.</p>
 
