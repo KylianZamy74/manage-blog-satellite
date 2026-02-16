@@ -359,43 +359,96 @@ export default function GuidePage() {
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="rounded-xl bg-gray-50 border border-gray-200 p-5">
-                                <p className="font-medium text-gray-800 mb-2">📊 Quantité</p>
-                                <ul className="text-sm text-gray-600 space-y-1.5">
-                                    <li>• Maximum <strong>3 images</strong> par article</li>
-                                    <li>• Minimum recommandé : 2</li>
-                                    <li>• 1 image cover + 1 ou 2 illustrations</li>
-                                </ul>
+                        <div className="rounded-xl bg-gray-50 border border-gray-200 p-5">
+                            <p className="font-medium text-gray-800 mb-2">📊 Quantité : maximum 3 images</p>
+                            <p className="text-sm text-gray-600">Minimum recommandé : 2 (une cover + une illustration).</p>
+                        </div>
+
+                        {/* Emplacements détaillés */}
+                        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden text-sm">
+                            <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
+                                <p className="font-medium text-gray-800">📍 Où placer chaque image ?</p>
                             </div>
-                            <div className="rounded-xl bg-gray-50 border border-gray-200 p-5">
-                                <p className="font-medium text-gray-800 mb-2">📍 Où les placer ?</p>
-                                <ul className="text-sm text-gray-600 space-y-1.5">
-                                    <li>• <strong>Cover</strong> : en haut, après l&apos;intro</li>
-                                    <li>• <strong>Milieu</strong> : pour illustrer une section clé</li>
-                                    <li>• <strong>Bas</strong> : avant le dernier CTA</li>
-                                </ul>
+                            <div className="divide-y divide-gray-100">
+                                <div className="px-5 py-4 flex items-start gap-4">
+                                    <span className="shrink-0 w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold">1</span>
+                                    <div>
+                                        <p className="font-medium text-gray-800">Image cover</p>
+                                        <p className="text-gray-500 mt-0.5">Juste après le paragraphe d&apos;introduction, en haut de l&apos;article.</p>
+                                        <p className="text-gray-500 mt-1">🔍 <strong>Suggestion de recherche Unsplash</strong> : une vue d&apos;ensemble en rapport avec votre sujet ou votre ville.</p>
+                                        <p className="text-xs text-gray-400 mt-1">Ex : <code className="bg-gray-100 px-1.5 py-0.5 rounded">Biarritz aerial view coastline ocean</code></p>
+                                    </div>
+                                </div>
+                                <div className="px-5 py-4 flex items-start gap-4">
+                                    <span className="shrink-0 w-8 h-8 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">2</span>
+                                    <div>
+                                        <p className="font-medium text-gray-800">Image milieu <span className="text-gray-400 font-normal">(optionnelle)</span></p>
+                                        <p className="text-gray-500 mt-0.5">Pour illustrer un comparatif, un schéma, ou une section clé de l&apos;article.</p>
+                                        <p className="text-gray-500 mt-1">🔍 <strong>Suggestion de recherche Unsplash</strong> : un visuel qui illustre le coeur de votre sujet.</p>
+                                        <p className="text-xs text-gray-400 mt-1">Ex : <code className="bg-gray-100 px-1.5 py-0.5 rounded">luxury apartment interior living room bright</code></p>
+                                    </div>
+                                </div>
+                                <div className="px-5 py-4 flex items-start gap-4">
+                                    <span className="shrink-0 w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">3</span>
+                                    <div>
+                                        <p className="font-medium text-gray-800">Image basse <span className="text-gray-400 font-normal">(optionnelle)</span></p>
+                                        <p className="text-gray-500 mt-0.5">Avant le dernier CTA, pour relancer l&apos;attention du lecteur.</p>
+                                        <p className="text-gray-500 mt-1">🔍 <strong>Suggestion de recherche Unsplash</strong> : une ambiance locale ou un visuel aspirationnel.</p>
+                                        <p className="text-xs text-gray-400 mt-1">Ex : <code className="bg-gray-100 px-1.5 py-0.5 rounded">French basque country village sunset</code></p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
+                        <div className="rounded-xl bg-sky-50 border border-sky-200/60 p-5">
+                            <p className="font-medium text-sky-800">💡 Astuce pour trouver vos images</p>
+                            <p className="text-sm text-sky-700 mt-1">
+                                Allez sur <strong>Unsplash</strong> ou <strong>Pexels</strong> (images gratuites et libres de droits).
+                                Cherchez en <strong>anglais</strong> pour avoir plus de résultats.
+                                Téléchargez l&apos;image sur votre ordinateur, puis importez-la via le bouton image de l&apos;éditeur.
+                            </p>
+                        </div>
+
+                        {/* Alt text */}
                         <div className="rounded-xl bg-gray-50 border border-gray-200 p-5 space-y-3">
                             <p className="font-medium text-gray-800">🏷️ Le texte alternatif (alt text)</p>
                             <p className="text-sm text-gray-600">
-                                C&apos;est la description de l&apos;image pour Google (et pour l&apos;accessibilité). Décrivez ce que montre l&apos;image en y glissant naturellement un mot-clé.
+                                Quand vous importez une image, l&apos;éditeur vous demande un <strong>texte alternatif</strong>.
+                                C&apos;est ce que Google &quot;lit&quot; pour comprendre votre image (et c&apos;est aussi utile pour l&apos;accessibilité).
                             </p>
-                            <div className="space-y-1.5 text-sm">
+
+                            <div className="rounded-lg bg-white border border-gray-200 p-4 space-y-2">
+                                <p className="text-sm font-medium text-gray-700">La règle : <strong>décrire ce que montre l&apos;image</strong> en glissant naturellement un mot-clé ou la localisation.</p>
+                            </div>
+
+                            <div className="space-y-2 text-sm">
                                 <div className="flex items-start gap-2">
                                     <span className="shrink-0 text-green-600">✅</span>
-                                    <code className="bg-green-50 text-green-800 px-2 py-0.5 rounded text-xs">Vue aérienne de la Grande Plage de Biarritz au coucher du soleil</code>
+                                    <div>
+                                        <code className="bg-green-50 text-green-800 px-2 py-0.5 rounded text-xs">Vue aérienne de la Grande Plage de Biarritz au coucher du soleil</code>
+                                        <p className="text-gray-400 text-xs mt-0.5">→ Descriptif + mot-clé &quot;Biarritz&quot; intégré naturellement</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <span className="shrink-0 text-green-600">✅</span>
+                                    <div>
+                                        <code className="bg-green-50 text-green-800 px-2 py-0.5 rounded text-xs">Salon lumineux d&apos;un appartement en location courte durée</code>
+                                        <p className="text-gray-400 text-xs mt-0.5">→ Descriptif + &quot;location courte durée&quot; intégré naturellement</p>
+                                    </div>
                                 </div>
                                 <div className="flex items-start gap-2">
                                     <span className="shrink-0 text-red-500">❌</span>
-                                    <code className="bg-red-50 text-red-800 px-2 py-0.5 rounded text-xs">image1</code>
+                                    <div>
+                                        <code className="bg-red-50 text-red-800 px-2 py-0.5 rounded text-xs">image1</code>
+                                        <p className="text-gray-400 text-xs mt-0.5">→ Aucune description, Google ne comprend rien</p>
+                                    </div>
                                 </div>
                                 <div className="flex items-start gap-2">
                                     <span className="shrink-0 text-red-500">❌</span>
-                                    <code className="bg-red-50 text-red-800 px-2 py-0.5 rounded text-xs">conciergerie airbnb biarritz location gestion SEO</code>
-                                    <span className="text-gray-400 text-xs">(keyword stuffing)</span>
+                                    <div>
+                                        <code className="bg-red-50 text-red-800 px-2 py-0.5 rounded text-xs">conciergerie airbnb biarritz location gestion SEO</code>
+                                        <p className="text-gray-400 text-xs mt-0.5">→ Keyword stuffing, Google pénalise ce genre de pratique</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -457,16 +510,23 @@ export default function GuidePage() {
                                 <p>3. Utilise des H2 pour les sections principales et des H3 pour les sous-sections. Intègre des mots-clés secondaires dans les H2.</p>
                                 <p>4. L&apos;article doit faire entre 2000 et 2250 mots.</p>
                                 <p>5. Place 3 CTA (appels à l&apos;action) sous forme de boutons : un après l&apos;intro, un au milieu, un avant la FAQ. Chaque CTA pointe vers l&apos;URL du site principal avec un texte incitatif et varié.</p>
-                                <p>6. Termine par une FAQ de 4 à 6 questions que les gens tapent vraiment sur Google. Réponses courtes (3-5 lignes).</p>
-                                <p>7. N&apos;invente AUCUNE information, AUCUN chiffre, AUCUN témoignage. Les données externes doivent être factuelles et vérifiables.</p>
-                                <p>8. Ton professionnel, accessible, orienté conversion. Pas d&apos;emojis. Pas de tiret long (em dash).</p>
-                                <p>9. N&apos;utilise jamais de tiret long &quot;—&quot; ni de tiret moyen &quot;–&quot;. Remplace par une virgule ou un point.</p>
+                                <p>6. Place maximum 3 images dans l&apos;article aux emplacements suivants :</p>
+                                <p>   - Image cover : juste après le paragraphe d&apos;introduction<br />
+                                   - Image milieu (optionnelle) : pour illustrer un comparatif ou une section clé<br />
+                                   - Image basse (optionnelle) : avant le dernier CTA</p>
+                                <p>   Pour chaque image, fournis :<br />
+                                   - Une suggestion de recherche en anglais pour Unsplash/Pexels<br />
+                                   - Un texte alternatif (alt text) en français, descriptif et optimisé SEO : décris ce que montre l&apos;image en intégrant naturellement un mot-clé ou la localisation. Pas de keyword stuffing.<br />
+                                   - L&apos;emplacement exact dans l&apos;article</p>
+                                <p>7. Termine par une FAQ de 4 à 6 questions que les gens tapent vraiment sur Google. Réponses courtes (3-5 lignes).</p>
+                                <p>8. N&apos;invente AUCUNE information, AUCUN chiffre, AUCUN témoignage. Les données externes doivent être factuelles et vérifiables.</p>
+                                <p>9. Ton professionnel, accessible, orienté conversion. Pas d&apos;emojis. Pas de tiret long (em dash).</p>
+                                <p>10. N&apos;utilise jamais de tiret long &quot;—&quot; ni de tiret moyen &quot;–&quot;. Remplace par une virgule ou un point.</p>
 
                                 <p><strong className="text-white">Fournis aussi :</strong></p>
                                 <p>- Un Meta Title (max 60 caractères) avec le mot-clé principal<br />
                                 - Une Meta Description (max 155 caractères) incitative<br />
-                                - Une courte description (max 150 caractères) pour la carte article du catalogue<br />
-                                - 3 suggestions de recherche d&apos;images en anglais pour Unsplash (cover, milieu, bas)</p>
+                                - Une courte description (max 150 caractères) pour la carte article du catalogue</p>
                             </div>
                         </div>
 
