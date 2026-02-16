@@ -1,4 +1,4 @@
-import { FileText, Home, PenSquare, List } from "lucide-react"
+import { FileText, Home, PenSquare, List, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import LogoutButton from "@/components/ui/LogoutButton"
@@ -31,6 +31,11 @@ const menuItems = [
         title: "Nouvel article",
         url: "/dashboard/articles/new",
         icon: PenSquare,
+    },
+    {
+        title: "Guide de rédaction",
+        url: "/dashboard/guide",
+        icon: BookOpen,
     },
 ]
 
