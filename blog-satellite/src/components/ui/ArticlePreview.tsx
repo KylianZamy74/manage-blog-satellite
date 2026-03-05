@@ -7,18 +7,41 @@ import { ImageGallery } from '@/lib/tiptap/image-gallery-extension'
 import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import { Button } from './button'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PublishButton from './PublishButton'
 import { ArrowLeft, Send } from 'lucide-react'
 import NextLink from 'next/link'
+
+interface Translation {
+    locale: string
+    title: string
+    content: object
+}
+
+const LOCALE_LABELS: Record<string, string> = {
+    FR: "Francais",
+    EN: "English",
+    NL: "Nederlands",
+    DE: "Deutsch",
+    ES: "Espanol",
+    IT: "Italiano",
+    PT: "Portugues",
+}
 
 interface ArticlePreviewComponentProps {
     content?: string | object
     articleId: string
     articleTitle: string
+    translations?: Translation[]
 }
 
-export default function ArticlePreviewComponent({ content, articleId, articleTitle }: ArticlePreviewComponentProps) {
+export default function ArticlePreviewComponent({ content, articleId, articleTitle, translations = [] }: ArticlePreviewComponentProps) {
+
+    const [activeLocale, setActiveLocale] = useState<string>("FR")
+
+    const activeTranslation = translations.find(t => t.locale === activeLocale)
+    const displayTitle = activeLocale === "FR" ? articleTitle : (activeTranslation?.title ?? articleTitle)
+    const displayContent = activeLocale === "FR" ? content : (activeTranslation?.content ?? content)
 
     const editor = useEditor({
         extensions: [
@@ -35,9 +58,16 @@ export default function ArticlePreviewComponent({ content, articleId, articleTit
             ImageGallery,
         ],
         editable: false,
-        content: content,
+        content: displayContent,
         immediatelyRender: false
     })
+
+    // Mettre a jour le contenu de l'editeur quand la langue change
+    useEffect(() => {
+        if (editor && !editor.isDestroyed && displayContent) {
+            editor.commands.setContent(displayContent as object)
+        }
+    }, [activeLocale, editor, displayContent])
 
     const [isOpen, setIsOpen] = useState<boolean>(false)
 
@@ -62,14 +92,38 @@ export default function ArticlePreviewComponent({ content, articleId, articleTit
                 </Button>
             </div>
 
+            {/* ── SELECTEUR DE LANGUE ── */}
+            {translations.length > 0 && (
+                <div className="flex items-center gap-2 mb-6">
+                    {["FR", ...translations.map(t => t.locale)].map((locale) => (
+                        <button
+                            key={locale}
+                            onClick={() => setActiveLocale(locale)}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                                activeLocale === locale
+                                    ? "bg-foreground text-background"
+                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            }`}
+                        >
+                            {LOCALE_LABELS[locale] || locale}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* ── TITRE ── */}
-            <h1 className="text-3xl font-bold mb-8">{articleTitle}</h1>
+            <h1 className="text-3xl font-bold mb-8">{displayTitle}</h1>
 
             {/* ── BANDEAU PREVIEW ── */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-8">
                 <p className="text-sm text-amber-800">
                     Vous etes en mode <span className="font-semibold">previsualisation</span>.
                     Ceci est le rendu final de votre article tel que vos lecteurs le verront.
+                    {activeLocale !== "FR" && (
+                        <span className="ml-1 font-semibold">
+                            (Version {LOCALE_LABELS[activeLocale] || activeLocale})
+                        </span>
+                    )}
                 </p>
             </div>
 

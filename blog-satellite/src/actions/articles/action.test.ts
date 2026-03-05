@@ -428,7 +428,7 @@ describe('publishArticle', () => {
     expect(result.message).toBe('Article publié !')
     expect(prismaMock.article.update).toHaveBeenCalledWith({
       where: { id: 'article-123' },
-      data: { status: 'PUBLISHED', publishedAt: expect.any(Date) }
+      data: { status: 'PUBLISHED', publishedAt: expect.any(Date), authorId: 'user-123', assignedAuthorId: null }
     })
   })
 

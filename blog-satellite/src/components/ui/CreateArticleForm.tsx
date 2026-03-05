@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { saveDraft } from "@/actions/articles/action"
 import { User } from "@prisma/client"
 import { Save, Eye, ChevronDown, FileText, Search, UserPlus } from "lucide-react"
+import TranslationSection from "@/components/ui/TranslationSection"
 
 interface ArticleFormProps {
     users: User[]
@@ -203,6 +204,9 @@ export default function ArticleForm({ users, isAdmin }: ArticleFormProps) {
                     </div>
                 )}
             </div>
+
+            {/* Section Traductions (visible si l'article a été sauvegardé) */}
+            {draftId && <TranslationSection articleId={draftId} />}
 
             {/* Section Admin - Assignation */}
             {isAdmin && (

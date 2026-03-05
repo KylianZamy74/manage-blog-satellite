@@ -1,26 +1,43 @@
 "use client"
 
 import { useState } from "react"
+import { useActionState } from "react"
 import TiptapEditor from "@/components/ui/TiptapEditor"
 import { Input } from "@/components/ui/input"
-import { editArticle } from "@/actions/articles/action"
-import { useActionState } from "react"
-import { Article, User } from "@prisma/client"
-import { ChevronDown, FileText, Search, UserPlus, CheckCircle, XCircle } from "lucide-react"
-import TranslationSection from "@/components/ui/TranslationSection"
+import { updateTranslation } from "@/actions/translations/action"
+import { ChevronDown, FileText, Search, CheckCircle, XCircle } from "lucide-react"
 
-interface ArticleFormProps {
-    article: Article
-    users: User[]
-    isAdmin: boolean
+interface TranslationEditFormProps {
+    translation: {
+        id: string
+        title: string
+        content: any
+        excerpt: string | null
+        metaTitle: string | null
+        metaDescription: string | null
+    }
 }
 
-export default function ArticleForm({ article, users, isAdmin }: ArticleFormProps) {
-
-    const [content, setContent] = useState(JSON.stringify(article.content))
+export default function TranslationEditForm({ translation }: TranslationEditFormProps) {
+    const [content, setContent] = useState(JSON.stringify(translation.content))
     const [showSeo, setShowSeo] = useState(false)
-    const editArticleWithId = editArticle.bind(null, article.id)
-    const [state, formAction, isPending] = useActionState(editArticleWithId, null)
+
+    async function handleSubmit(_prevState: any, formData: FormData) {
+        const title = formData.get("title") as string
+        const excerpt = formData.get("excerpt") as string
+        const metaTitle = formData.get("metatitle") as string
+        const metaDescription = formData.get("metadescription") as string
+
+        return updateTranslation(translation.id, {
+            title,
+            content,
+            excerpt: excerpt || null,
+            metaTitle: metaTitle || null,
+            metaDescription: metaDescription || null,
+        })
+    }
+
+    const [state, formAction, isPending] = useActionState(handleSubmit, null)
 
     return (
         <form action={formAction} className="max-w-4xl mx-auto space-y-6">
@@ -37,14 +54,14 @@ export default function ArticleForm({ article, users, isAdmin }: ArticleFormProp
                 <div className="space-y-2">
                     <label htmlFor="title" className="text-sm font-medium text-gray-700 flex items-center gap-2">
                         <FileText className="h-4 w-4 text-gray-400" />
-                        Titre de l&apos;article
+                        Titre traduit
                     </label>
                     <Input
                         id="title"
                         name="title"
                         type="text"
-                        placeholder="Ajouter le titre de l'article"
-                        defaultValue={article.title}
+                        placeholder="Titre de la traduction"
+                        defaultValue={translation.title}
                         className="text-lg"
                     />
                 </div>
@@ -57,14 +74,14 @@ export default function ArticleForm({ article, users, isAdmin }: ArticleFormProp
                         id="excerpt"
                         name="excerpt"
                         type="text"
-                        placeholder="Court résumé de votre article de blog"
-                        defaultValue={article.excerpt ?? ""}
+                        placeholder="Court résumé traduit"
+                        defaultValue={translation.excerpt ?? ""}
                     />
                 </div>
 
                 <div className="space-y-2">
                     <label htmlFor="content" className="text-sm font-medium text-gray-700">
-                        Contenu
+                        Contenu traduit
                     </label>
                     <Input type="hidden" name="content" value={content} />
                     <TiptapEditor content={content} onChange={setContent} />
@@ -95,7 +112,7 @@ export default function ArticleForm({ article, users, isAdmin }: ArticleFormProp
                                 name="metatitle"
                                 type="text"
                                 placeholder="Titre visible dans les résultats Google"
-                                defaultValue={article.metaTitle ?? ""}
+                                defaultValue={translation.metaTitle ?? ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -107,36 +124,12 @@ export default function ArticleForm({ article, users, isAdmin }: ArticleFormProp
                                 name="metadescription"
                                 type="text"
                                 placeholder="Description visible dans les résultats Google"
-                                defaultValue={article.metaDescription ?? ""}
+                                defaultValue={translation.metaDescription ?? ""}
                             />
                         </div>
                     </div>
                 )}
             </div>
-
-            {/* Section Traductions */}
-            <TranslationSection articleId={article.id} />
-
-            {/* Section Admin - Assignation */}
-            {isAdmin && (
-                <div className="bg-white rounded-xl border shadow-sm p-6 space-y-3">
-                    <label htmlFor="assignedAuthorId" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                        <UserPlus className="h-4 w-4 text-gray-400" />
-                        Assigner à un utilisateur
-                    </label>
-                    <select
-                        id="assignedAuthorId"
-                        name="assignedAuthorId"
-                        defaultValue={article.assignedAuthorId ?? ""}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                        <option value="">Aucun (reste à l&apos;admin)</option>
-                        {users.map((user) => (
-                            <option key={user.id} value={user.id}>{user.name}</option>
-                        ))}
-                    </select>
-                </div>
-            )}
 
             {/* Bouton soumettre */}
             <div className="pb-8">
@@ -145,7 +138,7 @@ export default function ArticleForm({ article, users, isAdmin }: ArticleFormProp
                     disabled={isPending}
                     className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium py-3 px-6 rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed"
                 >
-                    {isPending ? "Modification en cours..." : "Modifier l'article"}
+                    {isPending ? "Enregistrement..." : "Enregistrer la traduction"}
                 </button>
             </div>
         </form>
