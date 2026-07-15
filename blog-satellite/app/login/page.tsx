@@ -38,7 +38,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                             if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
                                 throw error
                             }
-                            redirect("/login/?error=AccessDenied")
+                            // Ne pas révéler si l'email correspond à un compte existant :
+                            // on affiche le même écran "vérifiez vos mails" dans tous les cas.
+                            redirect("/login/verify")
                         }
                     }}
                     className="bg-white rounded-xl border shadow-sm p-6 space-y-5"
