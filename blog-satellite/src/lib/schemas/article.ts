@@ -14,7 +14,7 @@ export const createArticleSchema = z.object({
         },
         {message: "Le contenue de l'article est requis"}
     ),
-    excerpt: z.string().optional(),
+    excerpt: z.string().optional().nullish(),
     metaDescription: z.string().max(160, "La méta-description contient au maximum 160 carctères").nullish(),
     metaTitle: z.string().nullish(),
     image: z.string().optional().nullish(),

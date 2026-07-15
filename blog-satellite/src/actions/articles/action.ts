@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import slugify from "@/lib/slugify";
 import { extractFirstImage } from "@/lib/extract-image";
+import { createArticleSchema } from "@/lib/schemas/article";
+import { sanitizeTiptapContent } from "@/lib/sanitize-tiptap-content";
 
 function canEditArticle(article: { authorId: string, status: string }, userId: string, userRole: string): boolean {
     const isOwner = article.authorId === userId
@@ -13,18 +15,6 @@ function canEditArticle(article: { authorId: string, status: string }, userId: s
 }
 
 export async function editArticle(id: string, prevState: any, formData: FormData) {
-
-    const title = formData.get("title") as string
-    const contentRaw = formData.get("content") as string
-    const content = JSON.parse(contentRaw)
-    const metaDescription = formData.get("metadescription") as string
-    const metaTitle = formData.get("metatitle") as string
-    const slug = slugify(title)
-    const excerpt = formData.get("excerpt") as string
-    const image = formData.get("image") as string | null
-    const coverImage = image || extractFirstImage(content)
-    const assignedAuthorIdRaw = formData.get("assignedAuthorId") as string | null
-    const assignedAuthorId = assignedAuthorIdRaw || null
 
     const session = await auth()
 
@@ -38,6 +28,25 @@ export async function editArticle(id: string, prevState: any, formData: FormData
     if (!canEditArticle(existingArticle, session.user.id, session.user.role)) {
         return { success: false, message: "Non autorisé" }
     }
+
+    const validation = createArticleSchema.safeParse({
+        title: formData.get("title"),
+        content: formData.get("content"),
+        excerpt: formData.get("excerpt"),
+        metaDescription: formData.get("metadescription"),
+        metaTitle: formData.get("metatitle"),
+        image: formData.get("image"),
+        authorIdFromForm: formData.get("assignedAuthorId"),
+    })
+    if (!validation.success) {
+        return { success: false, message: validation.error.issues[0]?.message || "Données invalides" }
+    }
+    const { title, content: contentRaw, excerpt, metaDescription, metaTitle, image, authorIdFromForm } = validation.data
+
+    const content = sanitizeTiptapContent(JSON.parse(contentRaw))
+    const slug = slugify(title)
+    const coverImage = image || extractFirstImage(content)
+    const assignedAuthorId = authorIdFromForm || null
 
     // Seul un admin peut assigner un utilisateur
     const updateData: any = { title, content, metaDescription, metaTitle, slug, excerpt, image: coverImage }
@@ -230,27 +239,34 @@ export async function adminDeleteArticle(id: string) {
 
 export async function saveDraft(id: string | null, data: { title: string, content: string, excerpt: string |null, image: string |null, authorIdFromForm: string |null, metaDescription: string |null, metaTitle: string |null }) {
 
-
-    const slug = slugify(data.title)
-    const coverImage = data.image || (data.content ? extractFirstImage(JSON.parse(data.content)) : null) 
     const session = await auth()
     if (!session?.user?.id) {
         return ({ success: false, message: "Aucun utilisateur authentifié" })
     }
+
+    const validation = createArticleSchema.safeParse(data)
+    if (!validation.success) {
+        return { success: false, message: validation.error.issues[0]?.message || "Données invalides" }
+    }
+    const validated = validation.data
+
+    const content = sanitizeTiptapContent(JSON.parse(validated.content))
+    const slug = slugify(validated.title)
+    const coverImage = validated.image || extractFirstImage(content)
     const authorId = session.user.id
-    const assignedAuthorId = data.authorIdFromForm || null
+    const assignedAuthorId = validated.authorIdFromForm || null
 
     if (id === null) {
         try {
             const article = await prisma.article.create({
                 data: {
-                    title: data.title,
-                    content: JSON.parse(data.content),
+                    title: validated.title,
+                    content,
                     slug,
                     image: coverImage,
-                    excerpt: data.excerpt,
-                    metaDescription: data.metaDescription,
-                    metaTitle: data.metaTitle,
+                    excerpt: validated.excerpt,
+                    metaDescription: validated.metaDescription,
+                    metaTitle: validated.metaTitle,
                     authorId,
                     assignedAuthorId,
                     status: 'DRAFT'
@@ -276,7 +292,7 @@ export async function saveDraft(id: string | null, data: { title: string, conten
             try {
                 await prisma.article.update({
                     where: { id },
-                    data: { title: data.title, content: JSON.parse(data.content), slug, excerpt: data.excerpt, image: coverImage, assignedAuthorId, metaDescription: data.metaDescription, metaTitle: data.metaTitle }
+                    data: { title: validated.title, content, slug, excerpt: validated.excerpt, image: coverImage, assignedAuthorId, metaDescription: validated.metaDescription, metaTitle: validated.metaTitle }
                 })
                 revalidatePath("/dashboard/articles")
                 return { success: true, message: "Modification de l'article effectué avec succès" }
