@@ -73,6 +73,9 @@ describe('createUser', () => {
       name: 'John',
       slug: 'john',
       role: 'CLIENT',
+      emailVerified: null,
+      image: null,
+      logo: null,
       createdAt: new Date()
     })
 
@@ -96,6 +99,9 @@ describe('createUser', () => {
       name: 'Nouveau User',
       slug: 'nouveau-user',
       role: 'CLIENT',
+      emailVerified: null,
+      image: null,
+      logo: null,
       createdAt: new Date()
     })
 
@@ -127,6 +133,9 @@ describe('createUser', () => {
       name: 'Jean-Pierre Dupont',
       slug: 'jean-pierre-dupont',
       role: 'CLIENT',
+      emailVerified: null,
+      image: null,
+      logo: null,
       createdAt: new Date()
     })
 
@@ -193,6 +202,9 @@ describe('deleteUser', () => {
       name: 'John',
       slug: 'john',
       role: 'CLIENT',
+      emailVerified: null,
+      image: null,
+      logo: null,
       createdAt: new Date()
     })
 
@@ -274,7 +286,10 @@ describe('getUser', () => {
       email: 'john@example.com',
       name: 'John Doe',
       slug: 'john-doe',
-      role: 'CLIENT',
+      role: 'CLIENT' as const,
+      emailVerified: null,
+      image: null,
+      logo: null,
       createdAt: new Date()
     }
 
