@@ -104,6 +104,11 @@ export async function getTranslations(articleId: string) {
         return []
     }
 
+    const article = await prisma.article.findUnique({ where: { id: articleId } })
+    if (!article || !canEditArticle(article, session.user.id, session.user.role)) {
+        return []
+    }
+
     return prisma.articleTranslation.findMany({
         where: { articleId },
         orderBy: { locale: "asc" },
@@ -116,10 +121,15 @@ export async function getTranslation(translationId: string) {
         return null
     }
 
-    return prisma.articleTranslation.findUnique({
+    const translation = await prisma.articleTranslation.findUnique({
         where: { id: translationId },
         include: { article: true },
     })
+    if (!translation || !canEditArticle(translation.article, session.user.id, session.user.role)) {
+        return null
+    }
+
+    return translation
 }
 
 export async function updateTranslation(
