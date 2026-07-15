@@ -3,6 +3,7 @@
 import {prisma} from "@/lib/prisma"
 import slugify from "@/lib/slugify"
 import { revalidatePath } from 'next/cache'
+import { auth } from "@/lib/auth"
 
 interface ActionResult {
     success: boolean,
@@ -12,11 +13,19 @@ interface ActionResult {
 
 export async function createUser(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
 
+  const session = await auth()
+  if (!session?.user?.id) {
+    return {success: false, message: "Non authentifié"}
+  }
+  if (session.user.role !== 'ADMIN') {
+    return {success: false, message: "Non autorisé"}
+  }
+
   const email = formData.get('email') as string
   const name = formData.get('name') as string
 
   const slug = slugify(name)
-  
+
 
     if (!email) {
     return {success: false, message: "Cet email n'existe pas"}
@@ -25,7 +34,7 @@ export async function createUser(prevState: ActionResult | null, formData: FormD
   const existingEmail = await prisma.user.findUnique({
     where: { email }
   })
-  
+
   if(existingEmail) {
     return {success: false, message: "Email déjà existant"}
   }
@@ -52,6 +61,14 @@ return {success: true, message: "Utilisateur créer avec succès ! "}
 
 export async function deleteUser(id: string){
 
+    const session = await auth()
+    if (!session?.user?.id) {
+        return {success: false, message: "Non authentifié"}
+    }
+    if (session.user.role !== 'ADMIN') {
+        return {success: false, message: "Non autorisé"}
+    }
+
     try {
          await prisma.user.delete({
         where: { id }
@@ -64,6 +81,13 @@ export async function deleteUser(id: string){
 }
 
 export async function getUsers() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return {success: false, message: "Non authentifié"}
+  }
+  if (session.user.role !== 'ADMIN') {
+    return {success: false, message: "Non autorisé"}
+  }
   try {
     const users = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' }
@@ -76,6 +100,13 @@ export async function getUsers() {
 }
 
 export async function getUser(id: string) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return {success: false, message: "Non authentifié"}
+  }
+  if (session.user.role !== 'ADMIN') {
+    return {success: false, message: "Non autorisé"}
+  }
   try {
     const user = await prisma.user.findUnique({
       where: { id }
@@ -84,6 +115,6 @@ export async function getUser(id: string) {
   } catch (error) {
     console.error(error)
     return {success: false, message: `Erreur lors de la récupération de l'utilisateur`}
-    
+
   }
 }

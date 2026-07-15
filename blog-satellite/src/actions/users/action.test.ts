@@ -3,9 +3,14 @@ import { mockDeep, mockReset } from 'vitest-mock-extended'
 import type { PrismaClient } from '@prisma/client'
 
 const prismaMock = mockDeep<PrismaClient>()
+const authMock = vi.fn()
 
 vi.mock('@/lib/prisma', () => ({
   prisma: prismaMock
+}))
+
+vi.mock('@/lib/auth', () => ({
+  auth: authMock
 }))
 
 vi.mock('next/cache', () => ({
@@ -15,9 +20,38 @@ vi.mock('next/cache', () => ({
 beforeEach(() => {
   mockReset(prismaMock)
   vi.clearAllMocks()
+  authMock.mockResolvedValue({ user: { id: 'admin-123', role: 'ADMIN' } })
 })
 
 describe('createUser', () => {
+
+  test('retourne erreur si non authentifié', async () => {
+    authMock.mockResolvedValue(null)
+    const { createUser } = await import('./action')
+
+    const formData = new FormData()
+    formData.set('email', 'john@example.com')
+    formData.set('name', 'John Doe')
+
+    const result = await createUser(null, formData)
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe('Non authentifié')
+  })
+
+  test('retourne erreur si non admin', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
+    const { createUser } = await import('./action')
+
+    const formData = new FormData()
+    formData.set('email', 'john@example.com')
+    formData.set('name', 'John Doe')
+
+    const result = await createUser(null, formData)
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe('Non autorisé')
+  })
 
   test('retourne erreur si email manquant', async () => {
     const { createUser } = await import('./action')
@@ -132,6 +166,26 @@ describe('createUser', () => {
 
 describe('deleteUser', () => {
 
+  test('retourne erreur si non authentifié', async () => {
+    authMock.mockResolvedValue(null)
+    const { deleteUser } = await import('./action')
+
+    const result = await deleteUser('user-123')
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe('Non authentifié')
+  })
+
+  test('retourne erreur si non admin', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
+    const { deleteUser } = await import('./action')
+
+    const result = await deleteUser('admin-123')
+
+    expect(result.success).toBe(false)
+    expect(result.message).toBe('Non autorisé')
+  })
+
   test('supprime un utilisateur avec succès', async () => {
     prismaMock.user.delete.mockResolvedValue({
       id: 'user-123',
@@ -165,6 +219,15 @@ describe('deleteUser', () => {
 
 describe('getUsers', () => {
 
+  test('retourne erreur si non admin', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
+    const { getUsers } = await import('./action')
+
+    const result = await getUsers()
+
+    expect(result).toEqual({ success: false, message: 'Non autorisé' })
+  })
+
   test('retourne tous les utilisateurs triés par date', async () => {
     const mockUsers = [
       { id: '1', name: 'User 1', email: 'user1@test.com', createdAt: new Date('2024-02-01') },
@@ -195,6 +258,15 @@ describe('getUsers', () => {
 })
 
 describe('getUser', () => {
+
+  test('retourne erreur si non admin', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
+    const { getUser } = await import('./action')
+
+    const result = await getUser('user-123')
+
+    expect(result).toEqual({ success: false, message: 'Non autorisé' })
+  })
 
   test('retourne un utilisateur par son ID', async () => {
     const mockUser = {
