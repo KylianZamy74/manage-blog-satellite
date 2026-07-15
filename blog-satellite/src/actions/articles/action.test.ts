@@ -295,7 +295,31 @@ describe('deleteArticle', () => {
 
 describe('getArticle', () => {
 
-  test('retourne un article par son ID', async () => {
+  test('retourne erreur si non authentifié', async () => {
+    authMock.mockResolvedValue(null)
+    const { getArticle } = await import('./action')
+
+    const result = await getArticle('article-123')
+
+    expect(result).toEqual({ success: false, message: 'Non authentifié' })
+  })
+
+  test('retourne erreur si l\'utilisateur n\'est pas propriétaire ni admin', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
+    prismaMock.article.findUnique.mockResolvedValue({
+      id: 'article-123',
+      authorId: 'autre-user',
+      status: 'PUBLISHED'
+    } as any)
+
+    const { getArticle } = await import('./action')
+
+    const result = await getArticle('article-123')
+
+    expect(result).toEqual({ success: false, message: 'Non autorisé' })
+  })
+
+  test('retourne un article par son ID pour son propriétaire', async () => {
     const mockArticle = {
       id: 'article-123',
       title: 'Mon Article',
@@ -312,6 +336,7 @@ describe('getArticle', () => {
       updatedAt: new Date()
     }
 
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
     prismaMock.article.findUnique.mockResolvedValue(mockArticle)
 
     const { getArticle } = await import('./action')
@@ -322,25 +347,36 @@ describe('getArticle', () => {
     expect(prismaMock.article.findUnique).toHaveBeenCalledWith({ where: { id: 'article-123' } })
   })
 
-  test('retourne null si article non trouvé', async () => {
+  test('retourne une erreur si article non trouvé', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
     prismaMock.article.findUnique.mockResolvedValue(null)
 
     const { getArticle } = await import('./action')
 
     const result = await getArticle('inexistant')
 
-    expect(result).toBeNull()
+    expect(result).toEqual({ success: false, message: 'Article non trouvé' })
   })
 })
 
 describe('getArticles', () => {
 
-  test('retourne tous les articles triés par date', async () => {
+  test('retourne erreur si non admin', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-123', role: 'CLIENT' } })
+    const { getArticles } = await import('./action')
+
+    const result = await getArticles()
+
+    expect(result).toEqual({ success: false, message: 'Non autorisé' })
+  })
+
+  test('retourne tous les articles triés par date pour un admin', async () => {
     const mockArticles = [
       { id: '1', title: 'Article 1', createdAt: new Date('2024-02-01') },
       { id: '2', title: 'Article 2', createdAt: new Date('2024-01-01') }
     ]
 
+    authMock.mockResolvedValue({ user: { id: 'admin-123', role: 'ADMIN' } })
     prismaMock.article.findMany.mockResolvedValue(mockArticles as any)
 
     const { getArticles } = await import('./action')

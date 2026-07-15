@@ -119,6 +119,13 @@ export async function unpublishArticle(id: string) {
 
 export async function getArticles() {
 
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, message: "Non authentifié" }
+    }
+    if (session.user.role !== 'ADMIN') {
+        return { success: false, message: "Non autorisé" }
+    }
     try {
         const articles = await prisma.article.findMany({
             orderBy: { createdAt: 'desc' }
@@ -130,10 +137,20 @@ export async function getArticles() {
 }
 
 export async function getArticle(id: string) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, message: "Non authentifié" }
+    }
     try {
         const article = await prisma.article.findUnique({
             where: { id }
         })
+        if (!article) {
+            return { success: false, message: "Article non trouvé" }
+        }
+        if (!canEditArticle(article, session.user.id, session.user.role)) {
+            return { success: false, message: "Non autorisé" }
+        }
         return article
 
     } catch (error) {
@@ -162,6 +179,52 @@ export async function getMyArticles() {
     } catch (error) {
         console.error(error)
         return { success: false, message: "Echec lors de la récupération de l'article" }
+    }
+}
+
+export async function getArticlesByUser(userId: string) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, message: "Non authentifié" }
+    }
+    if (session.user.role !== 'ADMIN') {
+        return { success: false, message: "Non autorisé" }
+    }
+    try {
+        const articles = await prisma.article.findMany({
+            where: { authorId: userId },
+            orderBy: { createdAt: 'desc' }
+        })
+        const articlesWithCover = articles.map((article) => ({
+            ...article,
+            image: article.image || extractFirstImage(article.content)
+        }))
+        return articlesWithCover
+    } catch (error) {
+        console.error(error)
+        return { success: false, message: "Echec lors de la récupération des articles" }
+    }
+}
+
+export async function adminDeleteArticle(id: string) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, message: "Non authentifié" }
+    }
+    if (session.user.role !== 'ADMIN') {
+        return { success: false, message: "Non autorisé" }
+    }
+    const article = await prisma.article.findUnique({ where: { id } })
+    if (!article) {
+        return { success: false, message: "Article non trouvé" }
+    }
+    try {
+        await prisma.article.delete({ where: { id } })
+        revalidatePath("/dashboard/admin/users")
+        return { success: true, message: "Article supprimé avec succès" }
+    } catch (error) {
+        console.error(error)
+        return { success: false, message: "Echec lors de la suppression de l'article" }
     }
 }
 
