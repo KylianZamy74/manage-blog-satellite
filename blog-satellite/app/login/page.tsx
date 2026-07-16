@@ -1,6 +1,7 @@
 import { auth, signIn } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { Mail, ArrowRight, XCircle } from "lucide-react"
+import { Mail, XCircle } from "lucide-react"
+import { LoginSubmitButton } from "@/components/ui/LoginSubmitButton"
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
 
@@ -64,13 +65,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-xl transition-colors cursor-pointer"
-                    >
-                        Recevoir le lien de connexion
-                        <ArrowRight className="h-4 w-4" />
-                    </button>
+                    <LoginSubmitButton />
                 </form>
 
                 <p className="text-xs text-center text-gray-400 mt-6">
