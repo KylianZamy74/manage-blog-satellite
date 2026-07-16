@@ -1,6 +1,6 @@
 import { getUsers } from "@/actions/users/action"
 import Link from "next/link"
-import { UserPlus, Mail, Shield, Users } from "lucide-react"
+import { UserPlus, Mail, Shield, Users, FileText } from "lucide-react"
 import DeleteUserButton from "@/components/ui/DeleteUserButton"
 
 export default async function UsersPage() {
@@ -64,6 +64,14 @@ export default async function UsersPage() {
                                             <Shield className="h-3 w-3" />
                                             {user.role === "ADMIN" ? "Admin" : "Client"}
                                         </span>
+
+                                        <Link
+                                            href={`/dashboard/admin/users/${user.id}/articles`}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                                        >
+                                            <FileText className="h-3.5 w-3.5" />
+                                            Articles
+                                        </Link>
 
                                         <DeleteUserButton userId={user.id} userName={user.name || "cet utilisateur"} />
                                     </div>
