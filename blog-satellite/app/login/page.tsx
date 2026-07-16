@@ -1,8 +1,13 @@
-import { signIn } from "@/lib/auth"
+import { auth, signIn } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Mail, ArrowRight, XCircle } from "lucide-react"
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+
+    const session = await auth()
+    if (session) {
+        redirect("/dashboard")
+    }
 
     const params = await searchParams
     const error = params?.error
