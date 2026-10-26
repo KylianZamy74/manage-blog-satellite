@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useImageUpload } from '@/hooks/use-image-upload'
+import { useResizeDrag } from '@/hooks/use-resize-drag'
 import { Plus, Trash2, GripVertical, ImageIcon, X } from 'lucide-react'
 
 interface GalleryImage {
@@ -57,34 +58,23 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
         setSettingsOpen(false)
     }
 
-    const handleResizeStart = useCallback((e: React.MouseEvent, index: number) => {
-        e.preventDefault()
-        e.stopPropagation()
+    const { livePercent, startResize } = useResizeDrag()
+
+    const handleResizeStart = (e: React.PointerEvent<HTMLElement>, index: number) => {
+        const cell = e.currentTarget.parentElement
+        const image = cell?.querySelector('img')
+        if (!cell || !image) return
         setResizingIndex(index)
-
-        const startX = e.clientX
-        const img = (e.currentTarget as HTMLElement).parentElement?.querySelector('img')
-        if (!img) return
-        const startWidth = img.offsetWidth
-
-        const handleMouseMove = (moveEvent: MouseEvent) => {
-            const diff = moveEvent.clientX - startX
-            const newWidth = Math.max(50, startWidth + diff)
-            const current = imagesRef.current
-            const newImages = [...current]
-            newImages[index] = { ...newImages[index], width: `${newWidth}px` }
-            updateAttributes({ images: JSON.parse(JSON.stringify(newImages)) })
-        }
-
-        const handleMouseUp = () => {
-            setResizingIndex(null)
-            document.removeEventListener('mousemove', handleMouseMove)
-            document.removeEventListener('mouseup', handleMouseUp)
-        }
-
-        document.addEventListener('mousemove', handleMouseMove)
-        document.addEventListener('mouseup', handleMouseUp)
-    }, [updateAttributes])
+        startResize(e, {
+            image, container: cell, direction: 1, symmetric: false,
+            onCommit: (width) => {
+                const newImages = [...imagesRef.current]
+                newImages[index] = { ...newImages[index], width }
+                updateAttributes({ images: JSON.parse(JSON.stringify(newImages)) })
+                setResizingIndex(null)
+            },
+        })
+    }
 
     return (
         <NodeViewWrapper
@@ -133,7 +123,7 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                         src={img.src}
                         alt={img.alt}
                         style={{
-                            width: img.width || '100%',
+                            width: resizingIndex === index && livePercent !== null ? `${livePercent}%` : img.width || '100%',
                             maxWidth: '100%',
                             height: 'auto',
                             borderRadius: '8px',
@@ -187,7 +177,7 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                             </button>
 
                             <div
-                                onMouseDown={(e) => handleResizeStart(e, index)}
+                                onPointerDown={(e) => handleResizeStart(e, index)}
                                 style={{
                                     position: 'absolute',
                                     bottom: 4,

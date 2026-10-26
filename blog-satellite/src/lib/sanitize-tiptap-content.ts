@@ -4,6 +4,7 @@
 
 const SAFE_URL_SCHEME = /^(https?:|mailto:|tel:)/i
 const SAFE_HEX_COLOR = /^#[0-9a-fA-F]{3,8}$/
+const SAFE_WIDTH = /^\d{1,4}(\.\d{1,2})?(px|%)$/
 
 function sanitizeUrlValue(value: unknown): string {
     const url = typeof value === "string" ? value.trim() : ""
@@ -13,6 +14,10 @@ function sanitizeUrlValue(value: unknown): string {
         return url
     }
     return "#"
+}
+
+function sanitizeWidthValue(value: unknown): string {
+    return typeof value === "string" && SAFE_WIDTH.test(value) ? value : "100%"
 }
 
 function sanitizeColorValue(value: unknown, fallback = "#2563eb"): string {
@@ -36,6 +41,7 @@ function sanitizeNode(node: unknown): unknown {
         if (sanitized.type === "ctaButton" || sanitized.type === "customImage" || sanitized.type === "image") {
             if ("href" in attrs) attrs.href = sanitizeUrlValue(attrs.href)
             if ("src" in attrs) attrs.src = sanitizeUrlValue(attrs.src)
+            if ("width" in attrs) attrs.width = sanitizeWidthValue(attrs.width)
         }
         if (sanitized.type === "ctaButton") {
             attrs.color = sanitizeColorValue(attrs.color)
@@ -44,6 +50,7 @@ function sanitizeNode(node: unknown): unknown {
             attrs.images = (attrs.images as Array<Record<string, unknown>>).map((img) => ({
                 ...img,
                 src: sanitizeUrlValue(img?.src),
+                width: sanitizeWidthValue(img?.width),
             }))
         }
 
