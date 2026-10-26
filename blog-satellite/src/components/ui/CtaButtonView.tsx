@@ -50,7 +50,7 @@ export default function CtaButtonView({ node, updateAttributes, editor }: any) {
               : { backgroundColor: 'transparent', color: color, border: `2px solid ${color}` }
 
           return(
-            <NodeViewWrapper className="cta-node-wrapper" style={{ margin: '16px 0', textAlign: editor.isEditable ? editAlign : align }}>
+            <NodeViewWrapper draggable data-type="ctaButton" className="cta-node-wrapper" style={{ margin: '16px 0', textAlign: editor.isEditable ? editAlign : align }}>
               {editor.isEditable ? (
                 // ── MODE ÉDITION : Popover pour configurer le CTA ──
                 <Popover open={open} onOpenChange={(isOpen) => {
@@ -64,7 +64,7 @@ export default function CtaButtonView({ node, updateAttributes, editor }: any) {
                     }
                 }}>
                     <PopoverTrigger asChild>
-                        <span style={{ ...baseStyles, ...variantStyles }}>
+                        <span style={{ ...baseStyles, ...variantStyles, cursor: 'grab' }} title="Cliquer pour configurer, maintenir et glisser pour déplacer">
                             {editText}
                         </span>
                     </PopoverTrigger>

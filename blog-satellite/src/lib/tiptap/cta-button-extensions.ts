@@ -6,6 +6,7 @@ export const CtaButton = Node.create({
     name: 'ctaButton',
     group: 'block',
     atom: true,
+    draggable: true,
     addAttributes() {
         return {
             href: { default: '#' },

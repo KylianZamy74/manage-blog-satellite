@@ -79,6 +79,7 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
     return (
         <NodeViewWrapper
             draggable
+            className="group"
             data-type="imageGallery"
             style={{ margin: '16px 0', position: 'relative' }}
         >
@@ -86,6 +87,8 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
             {editor.isEditable && (
                 <div
                     data-drag-handle
+                    title="Maintenir et glisser pour déplacer la galerie"
+                    className={selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
                     style={{
                     position: 'absolute',
                     top: -12,
@@ -94,7 +97,6 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                     borderRadius: '4px',
                     padding: '2px',
                     cursor: 'grab',
-                    opacity: selected ? 1 : 0,
                     transition: 'opacity 0.2s',
                     zIndex: 10,
                     display: 'flex',
