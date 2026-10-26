@@ -14,6 +14,10 @@
       "service": "manage-blog-satellite"
     }
   ],
+  "routes": [
+    { "pattern": "page-satellite.com", "custom_domain": true },
+    { "pattern": "www.page-satellite.com", "custom_domain": true }
+  ],
   "r2_buckets": [
     {
       "binding": "IMAGES_BUCKET",
