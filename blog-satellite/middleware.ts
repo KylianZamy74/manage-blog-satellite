@@ -1,22 +1,17 @@
-import { auth } from "@/lib/auth"
- 
+import { NextResponse, type NextRequest } from "next/server"
 
-export const runtime = "nodejs"
-export default auth((req) => {
+// Edge middleware (Node middleware is not supported on Cloudflare): optimistic check on the
+// session cookie only. Real checks happen server-side: auth() in pages/actions, role in admin layout.
+const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"]
 
-  if (!req.auth && !req.nextUrl.pathname.startsWith("/login")) {
-    return Response.redirect(new URL("/login", req.nextUrl.origin))
+export default function middleware(req: NextRequest) {
+  const hasSession = SESSION_COOKIES.some((name) => req.cookies.has(name))
+
+  if (!hasSession && !req.nextUrl.pathname.startsWith("/login")) {
+    return NextResponse.redirect(new URL("/login", req.nextUrl.origin))
   }
-  
-  if(req.nextUrl.pathname.startsWith("/dashboard/admin")){
-    if(req.auth?.user?.role !== "ADMIN") {
-      return Response.redirect(new URL("/dashboard", req.nextUrl.origin))
-    }
-  }
-
-})
+}
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 }
-
