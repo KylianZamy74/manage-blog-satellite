@@ -14,60 +14,6 @@ function canEditArticle(article: { authorId: string, status: string }, userId: s
     return isOwner || isAdminWithDraft
 }
 
-export async function editArticle(id: string, prevState: any, formData: FormData) {
-
-    const session = await auth()
-
-    if (!session?.user?.id) {
-        return { success: false, message: "Non authentifié" }
-    }
-    const existingArticle = await prisma.article.findUnique({ where: { id } })
-    if (!existingArticle) {
-        return { success: false, message: "Article non trouvé" }
-    }
-    if (!canEditArticle(existingArticle, session.user.id, session.user.role)) {
-        return { success: false, message: "Non autorisé" }
-    }
-
-    const validation = createArticleSchema.safeParse({
-        title: formData.get("title"),
-        content: formData.get("content"),
-        excerpt: formData.get("excerpt"),
-        metaDescription: formData.get("metadescription"),
-        metaTitle: formData.get("metatitle"),
-        image: formData.get("image"),
-        authorIdFromForm: formData.get("assignedAuthorId"),
-    })
-    if (!validation.success) {
-        return { success: false, message: validation.error.issues[0]?.message || "Données invalides" }
-    }
-    const { title, content: contentRaw, excerpt, metaDescription, metaTitle, image, authorIdFromForm } = validation.data
-
-    const content = sanitizeTiptapContent(JSON.parse(contentRaw))
-    const slug = slugify(title)
-    const coverImage = image || extractFirstImage(content)
-    const assignedAuthorId = authorIdFromForm || null
-
-    // Seul un admin peut assigner un utilisateur
-    const updateData: any = { title, content, metaDescription, metaTitle, slug, excerpt, image: coverImage }
-    if (session.user.role === 'ADMIN') {
-        updateData.assignedAuthorId = assignedAuthorId
-    }
-
-    try {
-        await prisma.article.update({
-            where: { id },
-            data: updateData
-        })
-        revalidatePath("/dashboard/articles")
-        return { success: true, message: "Modification de l'article effectué avec succès" }
-    }
-    catch (error) {
-        console.error(error)
-        return { success: false, message: "Echec lors de l'édition d'un article" }
-    }
-}
-
 export async function deleteArticle(id: string) {
 
     const session = await auth()
@@ -237,11 +183,14 @@ export async function adminDeleteArticle(id: string) {
     }
 }
 
-export async function saveDraft(id: string | null, data: { title: string, content: string, excerpt: string |null, image: string |null, authorIdFromForm: string |null, metaDescription: string |null, metaTitle: string |null }) {
+export type ArticleInput = { title: string, content: string, excerpt: string | null, image: string | null, authorIdFromForm: string | null, metaDescription: string | null, metaTitle: string | null }
+
+// Creates (id === null) or updates an article. Single save path for the editor (autosave and manual save).
+export async function saveArticle(id: string | null, data: ArticleInput) {
 
     const session = await auth()
     if (!session?.user?.id) {
-        return ({ success: false, message: "Aucun utilisateur authentifié" })
+        return { success: false, message: "Non authentifié" }
     }
 
     const validation = createArticleSchema.safeParse(data)
@@ -251,56 +200,46 @@ export async function saveDraft(id: string | null, data: { title: string, conten
     const validated = validation.data
 
     const content = sanitizeTiptapContent(JSON.parse(validated.content))
-    const slug = slugify(validated.title)
-    const coverImage = validated.image || extractFirstImage(content)
-    const authorId = session.user.id
-    const assignedAuthorId = validated.authorIdFromForm || null
-
-    if (id === null) {
-        try {
-            const article = await prisma.article.create({
-                data: {
-                    title: validated.title,
-                    content,
-                    slug,
-                    image: coverImage,
-                    excerpt: validated.excerpt,
-                    metaDescription: validated.metaDescription,
-                    metaTitle: validated.metaTitle,
-                    authorId,
-                    assignedAuthorId,
-                    status: 'DRAFT'
-                }
-            })
-            return { success: true, id: article.id }
-        } catch (error) {
-            console.error(error)
-            if ((error as any).code === 'P2002') {
-                return { success: false, message: "Un article avec ce titre existe déjà" }
-            }
-            return { success: false, message: "Echec lors de la création de l'article" }
-        }
-    } else  {
-            const existingArticle = await prisma.article.findUnique({ where: { id } })
-            if (!existingArticle) {
-                return { success: false, message: "Article non trouvé" }
-            }
-            if (!canEditArticle(existingArticle, session.user.id, session.user.role)) {
-                return { success: false, message: "Non autorisé" }
-            }
-
-            try {
-                await prisma.article.update({
-                    where: { id },
-                    data: { title: validated.title, content, slug, excerpt: validated.excerpt, image: coverImage, assignedAuthorId, metaDescription: validated.metaDescription, metaTitle: validated.metaTitle }
-                })
-                revalidatePath("/dashboard/articles")
-                return { success: true, message: "Modification de l'article effectué avec succès" }
-            } catch (error) {
-                return { success: false, message: "Echec lors de l'édition d'un article" }
-            }
-        }
+    const fields = {
+        title: validated.title,
+        content,
+        slug: slugify(validated.title),
+        image: validated.image || extractFirstImage(content),
+        excerpt: validated.excerpt,
+        metaDescription: validated.metaDescription,
+        metaTitle: validated.metaTitle,
     }
+    // Only an admin can assign an article; for anyone else the existing assignment is left untouched
+    const isAdmin = session.user.role === 'ADMIN'
+    const assignment = isAdmin ? { assignedAuthorId: validated.authorIdFromForm || null } : {}
+
+    try {
+        if (id === null) {
+            const article = await prisma.article.create({
+                data: { ...fields, ...assignment, authorId: session.user.id, status: 'DRAFT' }
+            })
+            revalidatePath("/dashboard/articles")
+            return { success: true, id: article.id }
+        }
+
+        const existingArticle = await prisma.article.findUnique({ where: { id } })
+        if (!existingArticle) {
+            return { success: false, message: "Article non trouvé" }
+        }
+        if (!canEditArticle(existingArticle, session.user.id, session.user.role)) {
+            return { success: false, message: "Non autorisé" }
+        }
+        await prisma.article.update({ where: { id }, data: { ...fields, ...assignment } })
+        revalidatePath("/dashboard/articles")
+        return { success: true, id }
+    } catch (error) {
+        console.error(error)
+        if ((error as { code?: string }).code === 'P2002') {
+            return { success: false, message: "Un article avec ce titre existe déjà" }
+        }
+        return { success: false, message: "Échec de l'enregistrement de l'article" }
+    }
+}
 
     export async function publishArticle(id: string) {
             const session = await auth()

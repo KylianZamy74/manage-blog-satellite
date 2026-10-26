@@ -196,4 +196,17 @@ body {
   .ProseMirror img.ProseMirror-selectednode {
     outline: 2px solid #3b82f6;
   }
+
+    .ProseMirror a {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+
+    .ProseMirror p.is-editor-empty:first-child::before {
+      content: attr(data-placeholder);
+      float: left;
+      height: 0;
+      color: #9ca3af;
+      pointer-events: none;
+    }
   }

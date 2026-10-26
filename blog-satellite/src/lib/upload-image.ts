@@ -22,3 +22,17 @@ export async function uploadImage(file: File): Promise<string> {
     if (!res.ok || !data.url) throw new Error(data.message || "Échec de l'envoi de l'image")
     return data.url
 }
+
+export const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/gif"
+
+// Opens the native file picker; resolves with null if the user cancels
+export function pickImageFile(): Promise<File | null> {
+    return new Promise((resolve) => {
+        const input = document.createElement("input")
+        input.type = "file"
+        input.accept = ACCEPTED_IMAGE_TYPES
+        input.onchange = () => resolve(input.files?.[0] ?? null)
+        input.oncancel = () => resolve(null)
+        input.click()
+    })
+}

@@ -1,7 +1,7 @@
 
 import { getArticle } from "@/actions/articles/action"
 import { getUsers } from "@/actions/users/action"
-import EditArticleForm from "@/components/ui/EditArticleForm"
+import ArticleEditor from "@/components/ui/ArticleEditor"
 import { auth } from "@/lib/auth"
 
 export default async function editArticle({params}: {params: Promise<{id: string}>}) {
@@ -23,7 +23,7 @@ return (
                 <h1 className="text-2xl font-bold text-gray-900">Modifier l&apos;article</h1>
                 <p className="text-sm text-gray-500 mt-1">{article.title}</p>
             </div>
-            <EditArticleForm article={article} users={users} isAdmin={isAdmin} />
+            <ArticleEditor article={article} users={users} isAdmin={isAdmin} />
         </div>
     )
 }
