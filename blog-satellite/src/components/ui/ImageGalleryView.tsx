@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { CldUploadWidget } from 'next-cloudinary'
+import ImageUploadTrigger from '@/components/ui/ImageUploadTrigger'
 import { Plus, Trash2, GripVertical, ImageIcon, X } from 'lucide-react'
 
 interface GalleryImage {
@@ -240,17 +240,10 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                     </div>
                 ))}
 
-                {editor.isEditable && <CldUploadWidget
-                    uploadPreset="blog_images"
-                    onSuccess={(result) => {
-                        if (typeof result.info === 'object' && result.info.secure_url) {
-                            handleAddImage(result.info.secure_url)
-                        }
-                    }}
-                >
-                    {({ open }) => (
+                {editor.isEditable && <ImageUploadTrigger onUploaded={handleAddImage}>
+                    {(open, uploading) => (
                         <div
-                            onClick={() => open()}
+                            onClick={uploading ? undefined : open}
                             style={{
                                 minHeight: '120px',
                                 border: '2px dashed #d1d5db',
@@ -268,10 +261,10 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                             onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#d1d5db')}
                         >
                             <Plus style={{ width: 24, height: 24 }} />
-                            <span style={{ fontSize: '12px' }}>Ajouter</span>
+                            <span style={{ fontSize: '12px' }}>{uploading ? 'Envoi…' : 'Ajouter'}</span>
                         </div>
                     )}
-                </CldUploadWidget>}
+                </ImageUploadTrigger>}
             </div>
 
             {selected && editor.isEditable && (

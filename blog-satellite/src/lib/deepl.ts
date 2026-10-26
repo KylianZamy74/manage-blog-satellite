@@ -58,8 +58,7 @@ export async function translateTexts(
         throw new Error(`Erreur DeepL (${response.status}): ${errorText}`)
     }
 
-    const data = await response.json()
-    const translations: { text: string }[] = data.translations
+    const { translations } = await response.json() as { translations: { text: string }[] }
 
     // Reconstituer le tableau avec les textes vides préservés
     const result = [...texts]
