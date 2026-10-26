@@ -19,3 +19,19 @@ describe('sanitizeTiptapContent — largeur des images', () => {
     expect(result.images[0].width).toBe('100%')
   })
 })
+
+describe('sanitizeTiptapContent — position des blocs', () => {
+  const block = (attrs: Record<string, unknown>) => sanitizeTiptapContent({ type: 'doc', content: [{ type: 'ctaButton', attrs: { href: 'https://x', ...attrs } }] }).content[0].attrs as Record<string, unknown>
+
+  test('garde un décalage valide sur un bloc aligné à gauche', () => {
+    expect(block({ align: 'left', offset: '33.33%' })).toMatchObject({ align: 'left', offset: '33.33%' })
+  })
+
+  test('ignore le décalage si le bloc est centré ou à droite', () => {
+    expect(block({ align: 'center', offset: '25%' }).offset).toBeNull()
+  })
+
+  test('rejette un alignement ou un décalage invalide', () => {
+    expect(block({ align: 'left; color:red', offset: '25%; x:y' })).toMatchObject({ align: 'left', offset: null })
+  })
+})

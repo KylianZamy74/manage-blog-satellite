@@ -7,7 +7,6 @@ export const CustomImage = Node.create({
 
     group: 'block',
     atom: true,
-    draggable: true,
 
     addAttributes() {
         return {
@@ -15,11 +14,12 @@ export const CustomImage = Node.create({
             alt:   { default: '' },
             width: { default: '100%' },
             align: { default: 'center' },
+            offset: { default: null },   // décalage depuis la gauche (ex. '25%'), seulement si align = left
         }
     },
 
     renderHTML({ HTMLAttributes }) {
-        const { src, alt, width, align } = HTMLAttributes
+        const { src, alt, width, align, offset } = HTMLAttributes
 
         return [
             'div',
@@ -29,7 +29,7 @@ export const CustomImage = Node.create({
                 mergeAttributes({
                     src,
                     alt,
-                    style: `width: ${width}; max-width: 100%; height: auto; border-radius: 8px`,
+                    style: `width: ${width}; max-width: 100%; height: auto; border-radius: 8px${offset ? `; margin-left: ${offset}` : ''}`,
                     draggable: 'false',
                 }),
             ],
@@ -49,6 +49,7 @@ export const CustomImage = Node.create({
                         alt: img.getAttribute('alt') || '',
                         width: img.style.width || '100%',
                         align: element.style.textAlign || 'center',
+                        offset: img.style.marginLeft || null,
                     }
                 },
             },

@@ -7,35 +7,43 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { AlignLeft, AlignCenter, AlignRight, GripVertical, Trash2 } from 'lucide-react'
 import { useResizeDrag } from '@/hooks/use-resize-drag'
+import { useBlockDrag } from '@/hooks/use-block-drag'
 
-const SIZE_PRESETS = ['25%', '50%', '75%', '100%']
+// Resize handles like a window: 4 corners + left/right edges ([dirX, dirY, position classes, cursor])
+const HANDLES: [1 | -1 | 0, 1 | -1 | 0, string, string][] = [
+    [-1, -1, '-top-1.5 -left-1.5', 'cursor-nwse-resize'],
+    [1, -1, '-top-1.5 -right-1.5', 'cursor-nesw-resize'],
+    [-1, 1, '-bottom-1.5 -left-1.5', 'cursor-nesw-resize'],
+    [1, 1, '-bottom-1.5 -right-1.5', 'cursor-nwse-resize'],
+    [-1, 0, 'top-1/2 -translate-y-1/2 -left-1 h-10 w-2', 'cursor-ew-resize'],
+    [1, 0, 'top-1/2 -translate-y-1/2 -right-1 h-10 w-2', 'cursor-ew-resize'],
+]
 
-export default function CustomImageView({ node, updateAttributes, selected, deleteNode, editor }: any) {
-    const { src, alt, width, align } = node.attrs
+export default function CustomImageView({ node, updateAttributes, selected, deleteNode, editor, getPos }: any) {
+    const { src, alt, width, align, offset } = node.attrs
 
     const [editAlt, setEditAlt] = useState(alt)
     const [editAlign, setEditAlign] = useState(align)
     const [open, setOpen] = useState(false)
-    const { livePercent, startResize } = useResizeDrag()
-    const currentWidth = livePercent !== null ? `${livePercent}%` : width
+    const { resizing, startResize } = useResizeDrag()
+    const { startDrag, dragging, overlay } = useBlockDrag(editor, getPos)
 
     const handleSave = () => {
-        updateAttributes({ alt: editAlt, align: editAlign })
+        updateAttributes({ alt: editAlt, align: editAlign, offset: editAlign === align ? offset : null })
         setOpen(false)
     }
 
-    const resizeFrom = (direction: 1 | -1) => (e: React.PointerEvent<HTMLElement>) => {
+    const resizeFrom = (dirX: 1 | -1 | 0, dirY: 1 | -1 | 0) => (e: React.PointerEvent<HTMLElement>) => {
         const frame = e.currentTarget.parentElement
         const container = e.currentTarget.closest<HTMLElement>('[data-type="customImage"]')
         if (frame && container) startResize(e, {
-            image: frame, container, direction, symmetric: align === 'center',
+            frame, container, dirX, dirY, symmetric: align === 'center',
             onCommit: (newWidth) => updateAttributes({ width: newWidth }),
         })
     }
 
     return (
         <NodeViewWrapper
-            draggable
             data-type="customImage"
             style={{
                 textAlign: align as React.CSSProperties['textAlign'],
@@ -46,7 +54,7 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
             {editor.isEditable ? (
                 // ── MODE ÉDITION : Popover + drag handle + resize + badge ALT ──
                 <Popover open={open} onOpenChange={(isOpen) => {
-                    if (livePercent !== null) return
+                    if (resizing) return
                     setOpen(isOpen)
                     if (isOpen) {
                         setEditAlt(alt)
@@ -54,8 +62,12 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                     }
                 }}>
                     <PopoverTrigger asChild>
-                        <div className="group" style={{ display: 'inline-block', position: 'relative', width: currentWidth, maxWidth: '100%', verticalAlign: 'top' }}>
-                            {/* Repère visuel : toute l'image se glisse pour la déplacer dans le texte */}
+                        <div
+                            className="group"
+                            onPointerDown={(e) => { e.preventDefault(); startDrag(e) }}
+                            style={{ display: 'inline-block', position: 'relative', width, maxWidth: '100%', verticalAlign: 'top', marginLeft: offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
+                        >
+                            {/* Repère visuel : glisser l'image pour la placer (gauche / centre / droite, entre deux paragraphes) */}
                             <div
                                 className={selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
                                 style={{
@@ -82,29 +94,22 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                                     width: '100%',
                                     height: 'auto',
                                     borderRadius: '8px',
-                                    outline: selected || livePercent !== null ? '2px solid #3b82f6' : 'none',
+                                    outline: selected || resizing ? '2px solid #3b82f6' : 'none',
                                     cursor: 'grab',
                                     display: 'block',
                                 }}
                                 draggable={false}
                             />
 
-                            {/* Poignées de redimensionnement (gauche et droite), visibles au survol */}
-                            {([-1, 1] as const).map((direction) => (
+                            {/* Poignées de redimensionnement (coins et bords), visibles au survol */}
+                            {HANDLES.map(([dirX, dirY, position, cursor]) => (
                                 <div
-                                    key={direction}
-                                    onPointerDown={resizeFrom(direction)}
+                                    key={`${dirX}${dirY}`}
+                                    onPointerDown={resizeFrom(dirX, dirY)}
                                     onClick={(e) => e.stopPropagation()}
-                                    className={`absolute top-1/2 -translate-y-1/2 h-12 w-2 rounded-full bg-blue-500 border border-white shadow cursor-ew-resize touch-none transition-opacity ${selected || livePercent !== null ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                                    style={direction === 1 ? { right: -4 } : { left: -4 }}
+                                    className={`absolute z-10 ${position} ${cursor} ${dirY ? 'h-3 w-3' : ''} rounded-full bg-white border-2 border-blue-500 shadow touch-none transition-opacity ${selected || resizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                                 />
                             ))}
-
-                            {livePercent !== null && (
-                                <div className="absolute top-2 left-1/2 -translate-x-1/2 rounded bg-black/70 px-2 py-0.5 text-xs font-medium text-white">
-                                    {livePercent}%
-                                </div>
-                            )}
 
                             {!alt && (
                                 <div
@@ -173,23 +178,6 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                             </div>
                         </div>
 
-                        <div className="space-y-1">
-                            <label className="text-xs text-muted-foreground">Taille</label>
-                            <div className="flex gap-2">
-                                {SIZE_PRESETS.map((preset) => (
-                                    <Button
-                                        key={preset}
-                                        type="button"
-                                        size="sm"
-                                        variant={width === preset ? 'default' : 'outline'}
-                                        onClick={() => updateAttributes({ width: preset })}
-                                    >
-                                        {preset}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-
                         <div className="flex gap-2">
                             <Button type="button" className="flex-1" onClick={handleSave}>
                                 Appliquer
@@ -216,10 +204,12 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                         height: 'auto',
                         borderRadius: '8px',
                         display: 'inline-block',
+                        marginLeft: offset ?? undefined,
                     }}
                 />
             )}
             
+            {overlay}
         </NodeViewWrapper>
     )
 }

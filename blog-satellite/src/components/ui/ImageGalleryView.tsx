@@ -58,7 +58,7 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
         setSettingsOpen(false)
     }
 
-    const { livePercent, startResize } = useResizeDrag()
+    const { startResize } = useResizeDrag()
 
     const handleResizeStart = (e: React.PointerEvent<HTMLElement>, index: number) => {
         const cell = e.currentTarget.parentElement
@@ -66,7 +66,7 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
         if (!cell || !image) return
         setResizingIndex(index)
         startResize(e, {
-            image, container: cell, direction: 1, symmetric: false,
+            frame: image, container: cell, dirX: 1, dirY: 1, symmetric: false,
             onCommit: (width) => {
                 const newImages = [...imagesRef.current]
                 newImages[index] = { ...newImages[index], width }
@@ -125,7 +125,7 @@ export default function ImageGalleryView({ node, updateAttributes, selected, del
                         src={img.src}
                         alt={img.alt}
                         style={{
-                            width: resizingIndex === index && livePercent !== null ? `${livePercent}%` : img.width || '100%',
+                            width: img.width || '100%',
                             maxWidth: '100%',
                             height: 'auto',
                             borderRadius: '8px',
