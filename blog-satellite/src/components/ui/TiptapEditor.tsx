@@ -5,7 +5,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { CustomImage } from '@/lib/tiptap/custom-image-extension'
 import { Button } from '@/components/ui/button'
 import { Bold, Italic, Heading1, Heading2, Heading3, List, Quote, ImageIcon } from 'lucide-react'
-import { CldUploadWidget } from 'next-cloudinary';
+import ImageUploadTrigger from '@/components/ui/ImageUploadTrigger'
 import Link from '@tiptap/extension-link'
 import { Link2 } from 'lucide-react'
 import { useCallback } from 'react'
@@ -132,23 +132,15 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                     >
                         <Quote className="h-4 w-4" />
                     </Button>
-                    <CldUploadWidget
-                        uploadPreset="blog_images"
-                        onSuccess={(result) => {
-                            if (typeof result.info === 'object' && result.info.secure_url) {
-                                editor.chain().focus().insertContent({
-                                    type: 'customImage',
-                                    attrs: { src: result.info.secure_url },
-                                }).run()
-                            }
-                        }}
+                    <ImageUploadTrigger
+                        onUploaded={(src) => editor.chain().focus().insertContent({ type: 'customImage', attrs: { src } }).run()}
                     >
-                        {({ open }) => (
-                            <Button type="button" variant="ghost" size="sm" onClick={() => open()}>
+                        {(open, uploading) => (
+                            <Button type="button" variant="ghost" size="sm" onClick={open} disabled={uploading}>
                                 <ImageIcon className="h-4 w-4" />
                             </Button>
                         )}
-                    </CldUploadWidget>
+                    </ImageUploadTrigger>
                     <Button
                         type="button"
                         variant="ghost"

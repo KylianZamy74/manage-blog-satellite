@@ -14,6 +14,17 @@
       "service": "manage-blog-satellite"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "IMAGES_BUCKET",
+      "bucket_name": "blog-satellite-images",
+      // dev (next dev / preview) also writes to the real bucket, so served URLs work locally
+      "remote": true
+    }
+  ],
+  "vars": {
+    "R2_PUBLIC_URL": "https://images.page-satellite.com"
+  },
   "observability": {
     "enabled": true
   }
