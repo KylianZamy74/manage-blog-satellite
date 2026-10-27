@@ -8,15 +8,17 @@ import { Button } from '@/components/ui/button'
 import TextAlign from "@tiptap/extension-text-align"
 import { AlignCenter, AlignLeft, AlignRight } from "lucide-react"
 import { useBlockDrag } from "@/hooks/use-block-drag"
+import { ctaHoverColor } from "@/lib/tiptap/cta-button-extensions"
 
 export default function CtaButtonView({ node, updateAttributes, editor, getPos }: any) {
-    const { href, text, variant, color, align, offset } = node.attrs
+    const { href, text, variant, color, align, offset, hoverColor } = node.attrs
 
     const [editText, setEditText] = useState(text)
     const [editHref, setEditHref] = useState(href)
     const [editColor, setEditColor] = useState(color)
     const [editVariant, setEditVariant] = useState(variant)
     const [editAlign, setEditAlign] = useState(align)
+    const [editHoverColor, setEditHoverColor] = useState<string | null>(hoverColor)
     const [open, setOpen] = useState(false)
     const { startDrag, dragging, overlay } = useBlockDrag(editor, getPos)
 
@@ -28,6 +30,7 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
               variant: editVariant,
               align: editAlign,
               offset: editAlign === align ? offset : null,
+              hoverColor: editHoverColor,
           })
           setOpen(false)
       }
@@ -41,11 +44,13 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
           textDecoration: 'none',
           textAlign: 'center',
           cursor: 'pointer',
+          transition: 'background-color 0.2s, border-color 0.2s, color 0.2s',
       }
 
          const variantStyles: React.CSSProperties = editVariant === 'primary'
           ? { backgroundColor: editColor, color: 'white', border: `2px solid ${editColor}` }
           : { backgroundColor: 'transparent', color: editColor, border: `2px solid ${editColor}` }
+      const hoverStyle = { '--cta-hover': ctaHoverColor(open ? editColor : color, open ? editHoverColor : hoverColor) } as React.CSSProperties
 
           // En preview, on utilise les valeurs du node (text, color...) pas les états d'édition (editText, editColor...)
           const previewVariantStyles: React.CSSProperties = variant === 'primary'
@@ -64,12 +69,14 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
                         setEditColor(color)
                         setEditVariant(variant)
                         setEditAlign(align)
+                        setEditHoverColor(hoverColor)
                     }
                 }}>
                     <PopoverTrigger asChild>
                         <span
+                            data-cta={editVariant}
                             onPointerDown={(e) => { e.preventDefault(); startDrag(e) }}
-                            style={{ ...baseStyles, ...variantStyles, cursor: 'grab', marginLeft: open ? undefined : offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
+                            style={{ ...baseStyles, ...variantStyles, ...hoverStyle, cursor: 'grab', marginLeft: open ? undefined : offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
                             title="Cliquer pour configurer, glisser pour placer"
                         >
                             {editText}
@@ -138,6 +145,26 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
                         </div>
 
                         <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Couleur au survol</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={editHoverColor ?? editColor}
+                                    onChange={(e) => setEditHoverColor(e.target.value)}
+                                    className="w-10 h-10 rounded cursor-pointer border-0"
+                                />
+                                <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <input
+                                        type="checkbox"
+                                        checked={editHoverColor === null}
+                                        onChange={(e) => setEditHoverColor(e.target.checked ? null : editColor)}
+                                    />
+                                    Automatique (plus foncé)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
                             <label className="text-xs text-muted-foreground">Variante</label>
                             <div className="flex gap-2">
                                 <Button
@@ -167,10 +194,11 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
               ) : (
                 // ── MODE PREVIEW : un vrai lien cliquable ──
                 <a
+                    data-cta={variant}
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ ...baseStyles, ...previewVariantStyles, marginLeft: offset ?? undefined }}
+                    style={{ ...baseStyles, ...previewVariantStyles, ...hoverStyle, marginLeft: offset ?? undefined }}
                 >
                     {text}
                 </a>

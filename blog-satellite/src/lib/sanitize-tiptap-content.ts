@@ -31,7 +31,7 @@ function sanitizeOffsetValue(value: unknown, align: string): string | null {
     return align === "left" && typeof value === "string" && SAFE_OFFSET.test(value) ? value : null
 }
 
-function sanitizeColorValue(value: unknown, fallback = "#2563eb"): string {
+function sanitizeColorValue<T extends string | null>(value: unknown, fallback: T): string | T {
     return typeof value === "string" && SAFE_HEX_COLOR.test(value) ? value : fallback
 }
 
@@ -59,7 +59,8 @@ function sanitizeNode(node: unknown): unknown {
             attrs.offset = sanitizeOffsetValue(attrs.offset, attrs.align as string)
         }
         if (sanitized.type === "ctaButton") {
-            attrs.color = sanitizeColorValue(attrs.color)
+            attrs.color = sanitizeColorValue(attrs.color, "#2563eb")
+            attrs.hoverColor = sanitizeColorValue(attrs.hoverColor, null)
         }
         if (sanitized.type === "imageGallery" && Array.isArray(attrs.images)) {
             attrs.images = (attrs.images as Array<Record<string, unknown>>).map((img) => ({
