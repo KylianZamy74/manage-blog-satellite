@@ -1,6 +1,6 @@
 "use client"
 
-import { useEditor, EditorContent, useEditorState, type Editor } from '@tiptap/react'
+import { useEditor, EditorContent, type Editor } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import StarterKit from '@tiptap/starter-kit'
 import { Placeholder, CharacterCount } from '@tiptap/extensions'
@@ -10,7 +10,6 @@ import type { SuggestionProps } from '@tiptap/suggestion'
 import { CustomImage } from '@/lib/tiptap/custom-image-extension'
 import { Button } from '@/components/ui/button'
 import { Bold, Italic, Heading1, Heading2, Heading3, List, Quote, ImageIcon, Link2 } from 'lucide-react'
-import Link from '@tiptap/extension-link'
 import { useRef, useState } from 'react'
 import { CtaButton } from '@/lib/tiptap/cta-button-extensions'
 import { ImageGallery } from '@/lib/tiptap/image-gallery-extension'
@@ -93,12 +92,11 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
 
     const editor = useEditor({
         extensions: [
-            StarterKit,
-            CustomImage,
-            Link.configure({
-                openOnClick: false,
-                HTMLAttributes: { target: '_blank', rel: "noopener noreferrer" }
+            // StarterKit ships the link extension: configure it there, never add a second one
+            StarterKit.configure({
+                link: { openOnClick: false, HTMLAttributes: { target: '_blank', rel: "noopener noreferrer" } },
             }),
+            CustomImage,
             TextAlign.configure({
                 types: ['heading', 'paragraph'],  // les types de nodes qui supportent l'alignement
             }),
@@ -167,12 +165,10 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         immediatelyRender: false,
     })
 
-    const words = useEditorState({
-        editor,
-        selector: ({ editor }) => (editor?.storage.characterCount.words() as number | undefined) ?? 0,
-    }) ?? 0
-
     if (!editor) return null
+
+    // Read on each render: the parent re-renders on every change (onChange), and right after the editor is created
+    const words: number = editor.storage.characterCount.words()
 
     return (
         <div className="border rounded-lg">
