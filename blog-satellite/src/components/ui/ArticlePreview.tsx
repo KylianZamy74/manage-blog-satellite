@@ -3,6 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import { CustomImage } from '@/lib/tiptap/custom-image-extension'
 import StarterKit from '@tiptap/starter-kit'
 import { CtaButton } from '@/lib/tiptap/cta-button-extensions'
+import { BlockRow } from '@/lib/tiptap/block-row-extension'
 import { ImageGallery } from '@/lib/tiptap/image-gallery-extension'
 import TextAlign from '@tiptap/extension-text-align'
 import { Button } from './button'
@@ -53,6 +54,7 @@ export default function ArticlePreviewComponent({ content, articleId, articleTit
                 types: ['heading', 'paragraph'],
             }),
             CtaButton,
+            BlockRow,
             ImageGallery,
         ],
         editable: false,

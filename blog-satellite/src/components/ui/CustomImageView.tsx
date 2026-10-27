@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { AlignLeft, AlignCenter, AlignRight, GripVertical, Trash2 } from 'lucide-react'
 import { useResizeDrag } from '@/hooks/use-resize-drag'
-import { useBlockDrag } from '@/hooks/use-block-drag'
+import { isInRow, useBlockDrag } from '@/hooks/use-block-drag'
 import { blockMargin } from '@/lib/tiptap/block-spacing'
 
 // Resize handles like a window: 4 corners + left/right edges ([dirX, dirY, position classes, cursor])
@@ -28,6 +28,8 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
     const [open, setOpen] = useState(false)
     const { resizing, startResize } = useResizeDrag()
     const { startDrag, dragging, overlay } = useBlockDrag(editor, getPos)
+    // In a row the wrapper takes the image width (share of the row) and the image fills it
+    const inRow = isInRow(editor, getPos)
 
     const handleSave = () => {
         updateAttributes({ alt: editAlt, align: editAlign, offset: editAlign === align ? offset : null })
@@ -35,10 +37,11 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
     }
 
     const resizeFrom = (dirX: 1 | -1 | 0, dirY: 1 | -1 | 0) => (e: React.PointerEvent<HTMLElement>) => {
-        const frame = e.currentTarget.parentElement
-        const container = e.currentTarget.closest<HTMLElement>('[data-type="customImage"]')
+        const wrapper = e.currentTarget.closest<HTMLElement>('[data-type="customImage"]')
+        const frame = inRow ? wrapper : e.currentTarget.parentElement
+        const container = inRow ? e.currentTarget.closest<HTMLElement>('[data-row]') : wrapper
         if (frame && container) startResize(e, {
-            frame, container, dirX, dirY, symmetric: align === 'center',
+            frame, container, dirX, dirY, symmetric: !inRow && align === 'center',
             onCommit: (newWidth) => updateAttributes({ width: newWidth }),
         })
     }
@@ -46,11 +49,9 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
     return (
         <NodeViewWrapper
             data-type="customImage"
-            style={{
-                textAlign: align as React.CSSProperties['textAlign'],
-                margin: blockMargin(node.attrs.spaceBefore),
-                position: 'relative',
-            }}
+            style={inRow
+                ? { width, flex: '0 1 auto', margin: 0, position: 'relative' }
+                : { textAlign: align as React.CSSProperties['textAlign'], margin: blockMargin(node.attrs.spaceBefore), position: 'relative' }}
         >
             {editor.isEditable ? (
                 // ── MODE ÉDITION : Popover + drag handle + resize + badge ALT ──
@@ -66,7 +67,7 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                         <div
                             className="group"
                             onPointerDown={(e) => { e.preventDefault(); startDrag(e) }}
-                            style={{ display: 'inline-block', position: 'relative', width, maxWidth: '100%', verticalAlign: 'top', marginLeft: offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
+                            style={{ display: 'inline-block', position: 'relative', width: inRow ? '100%' : width, maxWidth: '100%', verticalAlign: 'top', marginLeft: inRow ? undefined : offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
                         >
                             {/* Repère visuel : glisser l'image pour la placer (gauche / centre / droite, entre deux paragraphes) */}
                             <div
@@ -200,12 +201,12 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                     src={src}
                     alt={alt}
                     style={{
-                        width: width,
+                        width: inRow ? '100%' : width,
                         maxWidth: '100%',
                         height: 'auto',
                         borderRadius: '8px',
                         display: 'inline-block',
-                        marginLeft: offset ?? undefined,
+                        marginLeft: inRow ? undefined : offset ?? undefined,
                     }}
                 />
             )}

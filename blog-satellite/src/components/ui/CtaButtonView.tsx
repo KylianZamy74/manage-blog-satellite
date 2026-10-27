@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import TextAlign from "@tiptap/extension-text-align"
 import { AlignCenter, AlignLeft, AlignRight } from "lucide-react"
-import { useBlockDrag } from "@/hooks/use-block-drag"
+import { isInRow, useBlockDrag } from "@/hooks/use-block-drag"
 import { ctaHoverColor } from "@/lib/tiptap/cta-button-extensions"
 import { blockMargin } from "@/lib/tiptap/block-spacing"
 
@@ -22,6 +22,9 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
     const [editHoverColor, setEditHoverColor] = useState<string | null>(hoverColor)
     const [open, setOpen] = useState(false)
     const { startDrag, dragging, overlay } = useBlockDrag(editor, getPos)
+    const inRow = isInRow(editor, getPos)
+    // In a row, position comes from the order of the blocks
+    const marginLeft = inRow || (open && editAlign !== align) ? undefined : offset ?? undefined
 
     const handleSave = () => {
           updateAttributes({
@@ -59,7 +62,7 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
               : { backgroundColor: 'transparent', color: color, border: `2px solid ${color}` }
 
           return(
-            <NodeViewWrapper data-type="ctaButton" className="cta-node-wrapper" style={{ margin: blockMargin(node.attrs.spaceBefore), textAlign: open ? editAlign : align }}>
+            <NodeViewWrapper data-type="ctaButton" className="cta-node-wrapper" style={inRow ? { margin: 0, flex: '0 0 auto' } : { margin: blockMargin(node.attrs.spaceBefore), textAlign: open ? editAlign : align }}>
               {editor.isEditable ? (
                 // ── MODE ÉDITION : Popover pour configurer le CTA ──
                 <Popover open={open} onOpenChange={(isOpen) => {
@@ -77,7 +80,7 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
                         <span
                             data-cta={editVariant}
                             onPointerDown={(e) => { e.preventDefault(); startDrag(e) }}
-                            style={{ ...baseStyles, ...variantStyles, ...hoverStyle, cursor: 'grab', marginLeft: open && editAlign !== align ? undefined : offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
+                            style={{ ...baseStyles, ...variantStyles, ...hoverStyle, cursor: 'grab', marginLeft, opacity: dragging ? 0.4 : 1 }}
                             title="Cliquer pour configurer, glisser pour placer"
                         >
                             {editText}
@@ -199,7 +202,7 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ ...baseStyles, ...previewVariantStyles, ...hoverStyle, marginLeft: offset ?? undefined }}
+                    style={{ ...baseStyles, ...previewVariantStyles, ...hoverStyle, marginLeft: inRow ? undefined : offset ?? undefined }}
                 >
                     {text}
                 </a>

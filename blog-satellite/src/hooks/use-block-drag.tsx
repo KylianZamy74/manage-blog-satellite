@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import type { Editor } from "@tiptap/react"
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model"
 import { BLOCK_MARGIN_PX } from "@/lib/tiptap/block-spacing"
+import { ROW_GAP_PX } from "@/lib/tiptap/block-row-extension"
 
 export type BlockAlign = "left" | "center" | "right"
 
@@ -17,6 +18,10 @@ const GROW_MARGIN_PX = 60
 const AUTO_SCROLL_PX = 12
 /** free space above a block dropped below the content snaps to this step */
 const SPACE_STEP_PX = 8
+/** share of a block's width, on each side, where dropping puts the dragged block next to it */
+const BESIDE_ZONE = 1 / 3
+const MOVABLE_BLOCKS = ["customImage", "ctaButton"]
+const ROW = "blockRow"
 
 interface Placement {
     align: BlockAlign
@@ -33,6 +38,22 @@ interface DropTarget extends Placement {
     top: number
     /** free space above the block (px) when it is dropped below the content, 0 otherwise */
     spaceBefore: number
+    /** set when the block is dropped next to another image or CTA: they share a row */
+    beside?: Beside
+}
+
+interface Beside {
+    /** position of the block it goes next to */
+    pos: number
+    side: "before" | "after"
+    /** visible box of that block (viewport) */
+    rect: DOMRect
+}
+
+/** true when the block at this position sits in a row, next to other blocks */
+export const isInRow = (editor: Editor, getPos: () => number | undefined) => {
+    const pos = getPos()
+    return pos !== undefined && editor.state.doc.resolve(pos).parent.type.name === ROW
 }
 
 // After a drag, the browser still fires a click on release: swallow it so the settings popover stays closed
@@ -57,6 +78,7 @@ interface DraggedBlock {
     freed: number
 }
 
+
 // Center and edges first (perfect centering is effortless), otherwise the nearest of 12 columns
 export function snapPlacement(left: number, width: number, editorWidth: number): Placement {
     const edge = editorWidth * EDGE_SNAP
@@ -80,6 +102,11 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
     const findTarget = (x: number, y: number, block: { left: number; top: number; width: number }, dragged: DraggedBlock): DropTarget | null => {
         const view = editor.view
         const rect = view.dom.getBoundingClientRect()
+        const beside = findBeside(x, y, dragged)
+        if (beside) {
+            const left = beside.side === "before" ? beside.rect.left - ROW_GAP_PX - block.width : beside.rect.right + ROW_GAP_PX
+            return { align: "left", offset: null, left: left - rect.left, pos: beside.pos, top: beside.rect.top, spaceBefore: 0, beside }
+        }
         const hit = view.posAtCoords({ left: Math.min(Math.max(x, rect.left + 1), rect.right - 1), top: y })
         if (!hit) return null
         const doc = view.state.doc
@@ -117,6 +144,25 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
         return { ...placement, pos: contentEnd, top: base + spaceBefore, spaceBefore }
     }
 
+    // Pointer on the outer third of another image or CTA (or the empty space beside it): the block goes next to it
+    const findBeside = (x: number, y: number, dragged: DraggedBlock): Beside | null => {
+        const view = editor.view
+        const hovered = document.elementFromPoint(x, y)
+        if (!hovered || !view.dom.contains(hovered)) return null
+        let found: Beside | null = null
+        view.state.doc.descendants((node, pos) => {
+            if (found || !MOVABLE_BLOCKS.includes(node.type.name) || pos === dragged.from) return !found
+            const wrapper = (view.nodeDOM(pos) as HTMLElement | null)?.querySelector<HTMLElement>("[data-node-view-wrapper]")
+            if (!wrapper?.contains(hovered)) return false
+            const rect = (wrapper.firstElementChild ?? wrapper).getBoundingClientRect()
+            const zone = rect.width * BESIDE_ZONE
+            const side = x < rect.left + zone ? "before" : x > rect.right - zone ? "after" : null
+            if (side) found = { pos, side, rect }
+            return false
+        })
+        return found
+    }
+
     const startDrag = (e: React.PointerEvent<HTMLElement>) => {
         const from = getPos()
         if (e.button !== 0 || from === undefined) return
@@ -128,7 +174,7 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
         const dragged: DraggedBlock = {
             from,
             // how far the next block moves up once the dragged one is gone
-            freed: wrapper && next
+            freed: wrapper && next && !isInRow(editor, getPos)
                 ? next.getBoundingClientRect().top - wrapper.getBoundingClientRect().top + gap(prev, marginTop) - gap(prev, marginOf(next, "marginTop"))
                 : 0,
         }
@@ -162,9 +208,24 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
             if (current === null) return
             const node = editor.state.doc.nodeAt(from)
             if (!node) return
-            const moved = node.type.create({ ...node.attrs, align: current.align, offset: current.offset, spaceBefore: current.spaceBefore })
             const tr = editor.state.tr.delete(from, from + node.nodeSize)
-            tr.insert(tr.mapping.map(current.pos), moved)
+            if (current.beside) {
+                // In a row, position comes from the order of the blocks: no alignment, offset or free space
+                const moved = node.type.create({ ...node.attrs, align: "left", offset: null, spaceBefore: 0 })
+                const at = tr.mapping.map(current.beside.pos)
+                const target = tr.doc.nodeAt(at)
+                if (!target) return
+                if (tr.doc.resolve(at).parent.type.name === ROW) {
+                    tr.insert(current.beside.side === "after" ? at + target.nodeSize : at, moved)
+                } else {
+                    const neighbour = target.type.create({ ...target.attrs, align: "left", offset: null, spaceBefore: 0 })
+                    const blocks = current.beside.side === "after" ? [neighbour, moved] : [moved, neighbour]
+                    tr.replaceWith(at, at + target.nodeSize, editor.schema.nodes[ROW].create(null, blocks))
+                }
+            } else {
+                const moved = node.type.create({ ...node.attrs, align: current.align, offset: current.offset, spaceBefore: current.spaceBefore })
+                tr.insert(tr.mapping.map(current.pos), moved)
+            }
             // Blank lines left at the very end serve nothing (the editor keeps its own trailing line)
             let end = tr.doc.content.size
             for (let i = tr.doc.childCount - 1; i >= 0 && isBlank(tr.doc.child(i)); i--) end -= tr.doc.child(i).nodeSize
@@ -192,7 +253,19 @@ function DropGuide({ editor, target, width, height }: { editor: Editor; target: 
                 ))}
             </div>
             {target.align === "center" && <div className="absolute top-0 bottom-0 w-px bg-pink-500" style={{ left: rect.width / 2 }} />}
-            <div className="absolute left-0 right-0 h-0.5 rounded bg-blue-600" style={{ top: target.top - rect.top - 6 }} />
+            {target.beside ? (
+                // vertical bar: the block goes next to this one, in the same row
+                <div
+                    className="absolute w-0.5 rounded bg-blue-600"
+                    style={{
+                        left: (target.beside.side === "before" ? target.beside.rect.left - ROW_GAP_PX / 2 : target.beside.rect.right + ROW_GAP_PX / 2) - rect.left,
+                        top: target.beside.rect.top - rect.top,
+                        height: target.beside.rect.height,
+                    }}
+                />
+            ) : (
+                <div className="absolute left-0 right-0 h-0.5 rounded bg-blue-600" style={{ top: target.top - rect.top - 6 }} />
+            )}
             <div
                 className="absolute rounded-lg border-2 border-blue-500 bg-blue-500/15"
                 style={{ left: target.left, top: target.top - rect.top, width, height: Math.min(height, 160) }}
