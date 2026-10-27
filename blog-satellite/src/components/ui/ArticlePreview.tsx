@@ -4,7 +4,6 @@ import { CustomImage } from '@/lib/tiptap/custom-image-extension'
 import StarterKit from '@tiptap/starter-kit'
 import { CtaButton } from '@/lib/tiptap/cta-button-extensions'
 import { ImageGallery } from '@/lib/tiptap/image-gallery-extension'
-import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import { Button } from './button'
 import { useState, useEffect } from 'react'
@@ -45,12 +44,11 @@ export default function ArticlePreviewComponent({ content, articleId, articleTit
 
     const editor = useEditor({
         extensions: [
-            StarterKit,
-            CustomImage,
-            Link.configure({
-                openOnClick: false,
-                HTMLAttributes: { target: '_blank', rel: "noopener noreferrer" }
+            // StarterKit ships the link extension: configure it there, never add a second one
+            StarterKit.configure({
+                link: { openOnClick: false, HTMLAttributes: { target: '_blank', rel: "noopener noreferrer" } },
             }),
+            CustomImage,
             TextAlign.configure({
                 types: ['heading', 'paragraph'],
             }),
