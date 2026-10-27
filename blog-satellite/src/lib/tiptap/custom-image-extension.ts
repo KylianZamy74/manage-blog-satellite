@@ -1,6 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import CustomImageView from '@/components/ui/CustomImageView'
+import { blockMargin, spaceBeforeAttribute } from '@/lib/tiptap/block-spacing'
 
 export const CustomImage = Node.create({
     name: 'customImage',
@@ -14,16 +15,17 @@ export const CustomImage = Node.create({
             alt:   { default: '' },
             width: { default: '100%' },
             align: { default: 'center' },
+            spaceBefore: spaceBeforeAttribute,
             offset: { default: null },   // décalage depuis la gauche (ex. '25%'), seulement si align = left
         }
     },
 
     renderHTML({ HTMLAttributes }) {
-        const { src, alt, width, align, offset } = HTMLAttributes
+        const { src, alt, width, align, offset, spaceBefore } = HTMLAttributes
 
         return [
             'div',
-            { style: `text-align: ${align}; margin: 16px 0` },
+            { style: `text-align: ${align}; margin: ${blockMargin(spaceBefore)}` },
             [
                 'img',
                 mergeAttributes({

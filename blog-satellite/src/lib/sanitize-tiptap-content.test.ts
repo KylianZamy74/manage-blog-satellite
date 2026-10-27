@@ -47,3 +47,15 @@ describe('sanitizeTiptapContent — couleur de survol du CTA', () => {
     expect(hoverOf(c)).toBeNull()
   })
 })
+
+describe('sanitizeTiptapContent — espace au-dessus des blocs', () => {
+  const spaceOf = (spaceBefore: unknown) => (sanitizeTiptapContent({ type: 'doc', content: [{ type: 'customImage', attrs: { src: 'https://x/a.webp', spaceBefore } }] }).content[0].attrs as { spaceBefore: number }).spaceBefore
+
+  test('garde un espace valide en px', () => {
+    expect(spaceOf(120)).toBe(120)
+  })
+
+  test.each(['120px; color:red', -8, 1.5, 99999, undefined])('remplace une valeur invalide par 0 : %s', (v) => {
+    expect(spaceOf(v)).toBe(0)
+  })
+})

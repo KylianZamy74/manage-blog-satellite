@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { AlignLeft, AlignCenter, AlignRight, GripVertical, Trash2 } from 'lucide-react'
 import { useResizeDrag } from '@/hooks/use-resize-drag'
 import { useBlockDrag } from '@/hooks/use-block-drag'
+import { blockMargin } from '@/lib/tiptap/block-spacing'
 
 // Resize handles like a window: 4 corners + left/right edges ([dirX, dirY, position classes, cursor])
 const HANDLES: [1 | -1 | 0, 1 | -1 | 0, string, string][] = [
@@ -47,7 +48,7 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
             data-type="customImage"
             style={{
                 textAlign: align as React.CSSProperties['textAlign'],
-                margin: '16px 0',
+                margin: blockMargin(node.attrs.spaceBefore),
                 position: 'relative',
             }}
         >

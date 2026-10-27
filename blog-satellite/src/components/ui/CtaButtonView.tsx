@@ -9,6 +9,7 @@ import TextAlign from "@tiptap/extension-text-align"
 import { AlignCenter, AlignLeft, AlignRight } from "lucide-react"
 import { useBlockDrag } from "@/hooks/use-block-drag"
 import { ctaHoverColor } from "@/lib/tiptap/cta-button-extensions"
+import { blockMargin } from "@/lib/tiptap/block-spacing"
 
 export default function CtaButtonView({ node, updateAttributes, editor, getPos }: any) {
     const { href, text, variant, color, align, offset, hoverColor } = node.attrs
@@ -58,7 +59,7 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
               : { backgroundColor: 'transparent', color: color, border: `2px solid ${color}` }
 
           return(
-            <NodeViewWrapper data-type="ctaButton" className="cta-node-wrapper" style={{ margin: '16px 0', textAlign: open ? editAlign : align }}>
+            <NodeViewWrapper data-type="ctaButton" className="cta-node-wrapper" style={{ margin: blockMargin(node.attrs.spaceBefore), textAlign: open ? editAlign : align }}>
               {editor.isEditable ? (
                 // ── MODE ÉDITION : Popover pour configurer le CTA ──
                 <Popover open={open} onOpenChange={(isOpen) => {
