@@ -77,7 +77,7 @@ export default function CtaButtonView({ node, updateAttributes, editor, getPos }
                         <span
                             data-cta={editVariant}
                             onPointerDown={(e) => { e.preventDefault(); startDrag(e) }}
-                            style={{ ...baseStyles, ...variantStyles, ...hoverStyle, cursor: 'grab', marginLeft: open ? undefined : offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
+                            style={{ ...baseStyles, ...variantStyles, ...hoverStyle, cursor: 'grab', marginLeft: open && editAlign !== align ? undefined : offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
                             title="Cliquer pour configurer, glisser pour placer"
                         >
                             {editText}
