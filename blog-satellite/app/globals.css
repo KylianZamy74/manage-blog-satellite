@@ -202,6 +202,17 @@ body {
       text-decoration: underline;
     }
 
+    /* Survol des CTA, comme sur le blog (--cta-hover est posé sur le bouton) */
+    .ProseMirror [data-cta="primary"]:hover {
+      background-color: var(--cta-hover) !important;
+      border-color: var(--cta-hover) !important;
+    }
+
+    .ProseMirror [data-cta="secondary"]:hover {
+      color: var(--cta-hover) !important;
+      border-color: var(--cta-hover) !important;
+    }
+
     .ProseMirror p.is-editor-empty:first-child::before {
       content: attr(data-placeholder);
       float: left;

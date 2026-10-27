@@ -2,6 +2,10 @@ import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import CtaButtonView from '@/components/ui/CtaButtonView'
 
+/** Hover color of a CTA: the chosen one, or the main color automatically darkened */
+export const ctaHoverColor = (color: string, hoverColor: string | null) =>
+    hoverColor ?? `color-mix(in srgb, ${color} 80%, black)`
+
 export const CtaButton = Node.create({
     name: 'ctaButton',
     group: 'block',
@@ -12,12 +16,13 @@ export const CtaButton = Node.create({
             text: { default: 'Cliquez ici' },
             variant: { default: 'primary' },   // 'primary' | 'secondary'
             color: { default: '#2563eb' },
+            hoverColor: { default: null },   // null = couleur principale assombrie automatiquement
             align: { default: 'left' },
             offset: { default: null },   // décalage depuis la gauche (ex. '25%'), seulement si align = left
         }
     },
     renderHTML({ HTMLAttributes }) {
-        const { href, text, variant, color } = HTMLAttributes
+        const { href, text, variant, color, hoverColor } = HTMLAttributes
         const baseStyles = [
             'display: inline-block',
             'padding: 12px 24px',
@@ -27,7 +32,8 @@ export const CtaButton = Node.create({
             'text-decoration: none',
             'text-align: center',
             'cursor: pointer',
-            'transition: opacity 0.2s',
+            'transition: background-color 0.2s, border-color 0.2s, color 0.2s',
+            `--cta-hover: ${ctaHoverColor(color, hoverColor)}`,
         ].join('; ')
 
         const variantStyles = variant === 'primary'
@@ -67,6 +73,9 @@ export const CtaButton = Node.create({
                         color: (link as HTMLElement).style.backgroundColor || (link as HTMLElement).style.color || '#2563eb',
                         align: element.style.textAlign || 'left',
                         offset: (link as HTMLElement).style.marginLeft || null,
+                        hoverColor: /^#[0-9a-fA-F]{3,8}$/.test((link as HTMLElement).style.getPropertyValue('--cta-hover'))
+                            ? (link as HTMLElement).style.getPropertyValue('--cta-hover')
+                            : null,
                     }
                 },
             },

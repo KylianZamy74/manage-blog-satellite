@@ -35,3 +35,15 @@ describe('sanitizeTiptapContent — position des blocs', () => {
     expect(block({ align: 'left; color:red', offset: '25%; x:y' })).toMatchObject({ align: 'left', offset: null })
   })
 })
+
+describe('sanitizeTiptapContent — couleur de survol du CTA', () => {
+  const hoverOf = (hoverColor: unknown) => (sanitizeTiptapContent({ type: 'doc', content: [{ type: 'ctaButton', attrs: { href: 'https://x', hoverColor } }] }).content[0].attrs as { hoverColor: string | null }).hoverColor
+
+  test('garde une couleur hexadécimale', () => {
+    expect(hoverOf('#1e40af')).toBe('#1e40af')
+  })
+
+  test.each(['red; background:url(https://evil)', 42, undefined])('remplace une valeur invalide par le survol automatique : %s', (c) => {
+    expect(hoverOf(c)).toBeNull()
+  })
+})
