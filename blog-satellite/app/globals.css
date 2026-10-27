@@ -213,6 +213,11 @@ body {
       border-color: var(--cta-hover) !important;
     }
 
+    /* Rangée (images et CTA côte à côte) : chaque vue devient directement un élément de la ligne */
+    .ProseMirror [data-row] > .react-renderer {
+      display: contents;
+    }
+
     .ProseMirror p.is-editor-empty:first-child::before {
       content: attr(data-placeholder);
       float: left;

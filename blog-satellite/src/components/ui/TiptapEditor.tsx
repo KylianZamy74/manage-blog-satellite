@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Bold, Italic, Heading1, Heading2, Heading3, List, Quote, ImageIcon, Link2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { CtaButton } from '@/lib/tiptap/cta-button-extensions'
+import { BlockRow } from '@/lib/tiptap/block-row-extension'
 import { ImageGallery } from '@/lib/tiptap/image-gallery-extension'
 import { SlashCommand, type SlashItem } from '@/lib/tiptap/slash-command-extension'
 import TextAlign from '@tiptap/extension-text-align'
@@ -101,6 +102,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                 types: ['heading', 'paragraph'],  // les types de nodes qui supportent l'alignement
             }),
             CtaButton,
+            BlockRow,
             ImageGallery,
             Placeholder.configure({ placeholder: 'Commencez à écrire… ou tapez « / » pour insérer un bloc' }),
             CharacterCount,
