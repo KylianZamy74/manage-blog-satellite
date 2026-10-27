@@ -10,6 +10,9 @@ const DRAG_THRESHOLD_PX = 4
 const GRID_COLUMNS = 12
 /** distance (as a share of the editor width) under which center and edges win over the grid */
 const EDGE_SNAP = 0.04
+/** room kept under the dragged block when the editor grows, and viewport margin that triggers auto-scroll */
+const GROW_MARGIN_PX = 60
+const AUTO_SCROLL_PX = 12
 
 interface Placement {
     align: BlockAlign
@@ -24,6 +27,8 @@ interface DropTarget extends Placement {
     pos: number
     /** viewport y of the insertion line */
     lineY: number
+    /** empty paragraphs inserted before the block when it is dropped below the content */
+    blankLines: number
 }
 
 // After a drag, the browser still fires a click on release: swallow it so the settings popover stays closed
@@ -31,6 +36,12 @@ export function swallowNextClick() {
     const stop = (e: MouseEvent) => { e.stopPropagation(); e.preventDefault() }
     window.addEventListener("click", stop, { capture: true, once: true })
     setTimeout(() => window.removeEventListener("click", stop, { capture: true }), 300)
+}
+
+// Height of an empty paragraph (line + margin), to turn a drop distance into blank lines
+const blankLineHeight = (dom: HTMLElement) => {
+    const style = getComputedStyle(dom.querySelector("p") ?? dom)
+    return (parseFloat(style.lineHeight) || 24) + (parseFloat(style.marginBottom) || 0)
 }
 
 // Center and edges first (perfect centering is effortless), otherwise the nearest of 12 columns
@@ -51,7 +62,7 @@ export function snapPlacement(left: number, width: number, editorWidth: number):
 export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
     const [drag, setDrag] = useState<{ target: DropTarget; width: number; height: number } | null>(null)
 
-    const findTarget = (x: number, y: number, blockLeft: number, width: number): DropTarget | null => {
+    const findTarget = (x: number, y: number, block: { left: number; top: number; width: number }, from?: number): DropTarget | null => {
         const view = editor.view
         const rect = view.dom.getBoundingClientRect()
         const hit = view.posAtCoords({ left: Math.min(Math.max(x, rect.left + 1), rect.right - 1), top: y })
@@ -63,18 +74,29 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
             : hit.pos >= doc.content.size && doc.lastChild ? doc.content.size - doc.lastChild.nodeSize : hit.pos
         const blockRect = (view.nodeDOM(blockStart) as HTMLElement | null)?.getBoundingClientRect?.()
         const after = blockRect ? y > blockRect.top + blockRect.height / 2 : false
-        const block = doc.nodeAt(blockStart)
-        return {
-            ...snapPlacement(blockLeft - rect.left, width, rect.width),
-            pos: after && block ? blockStart + block.nodeSize : blockStart,
+        const node = doc.nodeAt(blockStart)
+        const target = {
+            ...snapPlacement(block.left - rect.left, block.width, rect.width),
+            pos: after && node ? blockStart + node.nodeSize : blockStart,
             lineY: blockRect ? (after ? blockRect.bottom : blockRect.top) : y,
+            blankLines: 0,
         }
+        if (target.pos < doc.content.size || !doc.lastChild) return target
+        // Below the content: blank lines fill the gap so the block lands where it is dropped
+        // (measured from the last block other than the dragged one, which leaves its place)
+        let lastStart = doc.content.size - doc.lastChild.nodeSize
+        if (lastStart === from && doc.childCount > 1) lastStart -= doc.child(doc.childCount - 2).nodeSize
+        const bottom = (view.nodeDOM(lastStart) as HTMLElement | null)?.getBoundingClientRect().bottom ?? y
+        const line = blankLineHeight(view.dom)
+        const blankLines = Math.max(0, Math.round((block.top - bottom) / line))
+        return { ...target, blankLines, lineY: bottom + blankLines * line }
     }
 
     const startDrag = (e: React.PointerEvent<HTMLElement>) => {
         if (e.button !== 0) return
         const box = e.currentTarget.getBoundingClientRect()
         const grabX = e.clientX - box.left
+        const grabY = e.clientY - box.top
         const startX = e.clientX
         const startY = e.clientY
         let current: DropTarget | null = null
@@ -84,13 +106,20 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
             if (!dragging && Math.hypot(move.clientX - startX, move.clientY - startY) < DRAG_THRESHOLD_PX) return
             dragging = true
             move.preventDefault()
-            current = findTarget(move.clientX, move.clientY, move.clientX - grabX, box.width)
+            // The editor grows under the pointer and the page scrolls, so a block can be taken further down
+            const dom = editor.view.dom
+            const editorRect = dom.getBoundingClientRect()
+            const needed = move.clientY - editorRect.top + box.height + GROW_MARGIN_PX
+            if (needed > editorRect.height) dom.style.minHeight = `${needed}px`
+            if (move.clientY > window.innerHeight - GROW_MARGIN_PX) window.scrollBy(0, AUTO_SCROLL_PX)
+            current = findTarget(move.clientX, move.clientY, { left: move.clientX - grabX, top: move.clientY - grabY, width: box.width }, getPos())
             setDrag(current && { target: current, width: box.width, height: box.height })
         }
         const onUp = () => {
             window.removeEventListener("pointermove", onMove)
             window.removeEventListener("pointerup", onUp)
             setDrag(null)
+            editor.view.dom.style.minHeight = ""
             if (!dragging) return
             swallowNextClick()
             const from = getPos()
@@ -99,7 +128,8 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
             if (!node) return
             const moved = node.type.create({ ...node.attrs, align: current.align, offset: current.offset })
             const tr = editor.state.tr.delete(from, from + node.nodeSize)
-            tr.insert(tr.mapping.map(current.pos), moved)
+            const blanks = Array.from({ length: current.blankLines }, () => editor.schema.nodes.paragraph.create())
+            tr.insert(tr.mapping.map(current.pos), [...blanks, moved])
             editor.view.dispatch(tr)
         }
         window.addEventListener("pointermove", onMove)
