@@ -1,6 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import CtaButtonView from '@/components/ui/CtaButtonView'
+import { blockMargin, spaceBeforeAttribute } from '@/lib/tiptap/block-spacing'
 
 /** Hover color of a CTA: the chosen one, or the main color automatically darkened */
 export const ctaHoverColor = (color: string, hoverColor: string | null) =>
@@ -18,6 +19,7 @@ export const CtaButton = Node.create({
             color: { default: '#2563eb' },
             hoverColor: { default: null },   // null = couleur principale assombrie automatiquement
             align: { default: 'left' },
+            spaceBefore: spaceBeforeAttribute,
             offset: { default: null },   // décalage depuis la gauche (ex. '25%'), seulement si align = left
         }
     },
@@ -44,7 +46,7 @@ export const CtaButton = Node.create({
 
         return [
             'div',
-            { style: `text-align: ${HTMLAttributes.align}; margin: 16px 0` },
+            { style: `text-align: ${HTMLAttributes.align}; margin: ${blockMargin(HTMLAttributes.spaceBefore)}` },
             [
                 'a',
                 mergeAttributes({

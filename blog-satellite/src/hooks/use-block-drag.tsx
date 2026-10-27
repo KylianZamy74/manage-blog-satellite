@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import type { Editor } from "@tiptap/react"
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model"
+import { BLOCK_MARGIN_PX } from "@/lib/tiptap/block-spacing"
 
 export type BlockAlign = "left" | "center" | "right"
 
@@ -14,6 +15,8 @@ const EDGE_SNAP = 0.04
 /** room kept under the dragged block when the editor grows, and viewport margin that triggers auto-scroll */
 const GROW_MARGIN_PX = 60
 const AUTO_SCROLL_PX = 12
+/** free space above a block dropped below the content snaps to this step */
+const SPACE_STEP_PX = 8
 
 interface Placement {
     align: BlockAlign
@@ -28,8 +31,8 @@ interface DropTarget extends Placement {
     pos: number
     /** viewport y where the block will appear once dropped (the ghost's top) */
     top: number
-    /** empty paragraphs inserted before the block when it is dropped below the content */
-    blankLines: number
+    /** free space above the block (px) when it is dropped below the content, 0 otherwise */
+    spaceBefore: number
 }
 
 // After a drag, the browser still fires a click on release: swallow it so the settings popover stays closed
@@ -39,15 +42,9 @@ export function swallowNextClick() {
     setTimeout(() => window.removeEventListener("click", stop, { capture: true }), 300)
 }
 
-// Height of an empty paragraph (line + margin), to turn a drop distance into blank lines
-const blankLineHeight = (dom: HTMLElement) => {
-    const style = getComputedStyle(dom.querySelector("p") ?? dom)
-    return (parseFloat(style.lineHeight) || 24) + (parseFloat(style.marginBottom) || 0)
-}
-
 const isBlank = (node: ProseMirrorNode) => node.type.name === "paragraph" && node.content.size === 0
 
-const marginOf =(dom: Element | null | undefined, side: "marginTop" | "marginBottom") =>
+const marginOf = (dom: Element | null | undefined, side: "marginTop" | "marginBottom") =>
     dom ? parseFloat(getComputedStyle(dom)[side]) || 0 : 0
 
 // Vertical margins collapse: the space between two blocks is the larger of the two margins
@@ -58,7 +55,6 @@ interface DraggedBlock {
     from: number
     /** height the content below moves up by (block + its margins) */
     freed: number
-    marginTop: number
 }
 
 // Center and edges first (perfect centering is effortless), otherwise the nearest of 12 columns
@@ -98,22 +94,27 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
         const pos = after && node ? blockStart + node.nodeSize : blockStart
         const placement = snapPlacement(block.left - rect.left, block.width, rect.width)
         const shift = (at: number) => (dragged.from < at ? dragged.freed : 0)
-        if (pos < doc.content.size || !doc.lastChild) {
-            const top = !blockRect ? y
-                : after ? blockRect.bottom + gap(blockDom, dragged.marginTop)
-                : blockRect.top - gap(blockDom?.previousElementSibling, marginOf(blockDom, "marginTop")) + gap(blockDom?.previousElementSibling, dragged.marginTop)
-            return { ...placement, pos, top: top - shift(blockStart), blankLines: 0 }
+        // End of the content: after the last block that is neither blank (e.g. the editor's trailing line) nor the dragged one
+        let contentEnd = doc.content.size
+        for (let i = doc.childCount - 1; i >= 0; i--) {
+            const start = contentEnd - doc.child(i).nodeSize
+            if (start !== dragged.from && !isBlank(doc.child(i))) break
+            contentEnd = start
         }
-        // Below the content: blank lines fill the gap so the block lands where it is dropped
-        // (measured from the last block other than the dragged one)
-        let lastStart = doc.content.size - doc.lastChild.nodeSize
-        if (lastStart === dragged.from && doc.childCount > 1) lastStart -= doc.child(doc.childCount - 2).nodeSize
+        const lastContent = doc.resolve(contentEnd).nodeBefore
+        if (pos < contentEnd || !lastContent) {
+            const top = !blockRect ? y
+                : after ? blockRect.bottom + gap(blockDom, BLOCK_MARGIN_PX)
+                : blockRect.top - gap(blockDom?.previousElementSibling, marginOf(blockDom, "marginTop")) + gap(blockDom?.previousElementSibling, BLOCK_MARGIN_PX)
+            return { ...placement, pos, top: top - shift(blockStart), spaceBefore: 0 }
+        }
+        // Below the content: right after it, with free space above the block so it lands where it is dropped
+        const lastStart = contentEnd - lastContent.nodeSize
         const lastDom = view.nodeDOM(lastStart) as HTMLElement | null
         const base = (lastDom?.getBoundingClientRect().bottom ?? y)
-            + gap(lastDom, dragged.marginTop) - shift(lastStart)
-        const line = blankLineHeight(view.dom)
-        const blankLines = Math.max(0, Math.round((block.top - base) / line))
-        return { ...placement, pos, top: base + blankLines * line, blankLines }
+            + gap(lastDom, BLOCK_MARGIN_PX) - shift(lastStart)
+        const spaceBefore = Math.max(0, Math.round((block.top - base) / SPACE_STEP_PX) * SPACE_STEP_PX)
+        return { ...placement, pos: contentEnd, top: base + spaceBefore, spaceBefore }
     }
 
     const startDrag = (e: React.PointerEvent<HTMLElement>) => {
@@ -130,7 +131,6 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
             freed: wrapper && next
                 ? next.getBoundingClientRect().top - wrapper.getBoundingClientRect().top + gap(prev, marginTop) - gap(prev, marginOf(next, "marginTop"))
                 : 0,
-            marginTop,
         }
         const grabX = e.clientX - box.left
         const grabY = e.clientY - box.top
@@ -162,11 +162,10 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
             if (current === null) return
             const node = editor.state.doc.nodeAt(from)
             if (!node) return
-            const moved = node.type.create({ ...node.attrs, align: current.align, offset: current.offset })
+            const moved = node.type.create({ ...node.attrs, align: current.align, offset: current.offset, spaceBefore: current.spaceBefore })
             const tr = editor.state.tr.delete(from, from + node.nodeSize)
-            const blanks = Array.from({ length: current.blankLines }, () => editor.schema.nodes.paragraph.create())
-            tr.insert(tr.mapping.map(current.pos), [...blanks, moved])
-            // Blank lines left at the very end (block moved back up) serve nothing: drop them
+            tr.insert(tr.mapping.map(current.pos), moved)
+            // Blank lines left at the very end serve nothing (the editor keeps its own trailing line)
             let end = tr.doc.content.size
             for (let i = tr.doc.childCount - 1; i >= 0 && isBlank(tr.doc.child(i)); i--) end -= tr.doc.child(i).nodeSize
             tr.delete(end, tr.doc.content.size)
