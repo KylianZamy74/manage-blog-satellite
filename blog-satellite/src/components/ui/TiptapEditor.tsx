@@ -130,6 +130,8 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
             onChange(JSON.stringify(editor.getJSON()))
         },
         editorProps: {
+            // The writing area fills the whole frame, so blocks can be placed down to the bottom
+            attributes: { class: 'py-4 min-h-[300px]' },
             handlePaste: (view, event) => {
                 const files = imageFiles(event.clipboardData?.files)
                 if (files.length === 0) return false
@@ -326,7 +328,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
 
             <EditorContent
                 editor={editor}
-                className="p-4 min-h-[300px]"
+                className="px-4"
             />
 
             {/* Pied : volume de l'article et raccourcis */}

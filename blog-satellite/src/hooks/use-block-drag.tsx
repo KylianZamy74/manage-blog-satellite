@@ -56,11 +56,14 @@ export function useBlockDrag(editor: Editor, getPos: () => number | undefined) {
         const rect = view.dom.getBoundingClientRect()
         const hit = view.posAtCoords({ left: Math.min(Math.max(x, rect.left + 1), rect.right - 1), top: y })
         if (!hit) return null
-        const $pos = view.state.doc.resolve(hit.pos)
-        const blockStart = $pos.depth > 0 ? $pos.before(1) : hit.pos
+        const doc = view.state.doc
+        const $pos = doc.resolve(hit.pos)
+        // Below the last block (empty bottom of the frame): drop after the last block
+        const blockStart = $pos.depth > 0 ? $pos.before(1)
+            : hit.pos >= doc.content.size && doc.lastChild ? doc.content.size - doc.lastChild.nodeSize : hit.pos
         const blockRect = (view.nodeDOM(blockStart) as HTMLElement | null)?.getBoundingClientRect?.()
         const after = blockRect ? y > blockRect.top + blockRect.height / 2 : false
-        const block = view.state.doc.nodeAt(blockStart)
+        const block = doc.nodeAt(blockStart)
         return {
             ...snapPlacement(blockLeft - rect.left, width, rect.width),
             pos: after && block ? blockStart + block.nodeSize : blockStart,
