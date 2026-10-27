@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import TextAlign from "@tiptap/extension-text-align"
 import { AlignCenter, AlignLeft, AlignRight } from "lucide-react"
+import { useBlockDrag } from "@/hooks/use-block-drag"
 
-export default function CtaButtonView({ node, updateAttributes, editor }: any) {
-    const { href, text, variant, color, align } = node.attrs
+export default function CtaButtonView({ node, updateAttributes, editor, getPos }: any) {
+    const { href, text, variant, color, align, offset } = node.attrs
 
     const [editText, setEditText] = useState(text)
     const [editHref, setEditHref] = useState(href)
@@ -17,6 +18,7 @@ export default function CtaButtonView({ node, updateAttributes, editor }: any) {
     const [editVariant, setEditVariant] = useState(variant)
     const [editAlign, setEditAlign] = useState(align)
     const [open, setOpen] = useState(false)
+    const { startDrag, dragging, overlay } = useBlockDrag(editor, getPos)
 
     const handleSave = () => {
           updateAttributes({
@@ -24,7 +26,8 @@ export default function CtaButtonView({ node, updateAttributes, editor }: any) {
               href: editHref,
               color: editColor,
               variant: editVariant,
-              align: editAlign
+              align: editAlign,
+              offset: editAlign === align ? offset : null,
           })
           setOpen(false)
       }
@@ -50,7 +53,7 @@ export default function CtaButtonView({ node, updateAttributes, editor }: any) {
               : { backgroundColor: 'transparent', color: color, border: `2px solid ${color}` }
 
           return(
-            <NodeViewWrapper className="cta-node-wrapper" style={{ margin: '16px 0', textAlign: editor.isEditable ? editAlign : align }}>
+            <NodeViewWrapper data-type="ctaButton" className="cta-node-wrapper" style={{ margin: '16px 0', textAlign: open ? editAlign : align }}>
               {editor.isEditable ? (
                 // ── MODE ÉDITION : Popover pour configurer le CTA ──
                 <Popover open={open} onOpenChange={(isOpen) => {
@@ -64,7 +67,11 @@ export default function CtaButtonView({ node, updateAttributes, editor }: any) {
                     }
                 }}>
                     <PopoverTrigger asChild>
-                        <span style={{ ...baseStyles, ...variantStyles }}>
+                        <span
+                            onPointerDown={(e) => { e.preventDefault(); startDrag(e) }}
+                            style={{ ...baseStyles, ...variantStyles, cursor: 'grab', marginLeft: open ? undefined : offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
+                            title="Cliquer pour configurer, glisser pour placer"
+                        >
                             {editText}
                         </span>
                     </PopoverTrigger>
@@ -163,11 +170,12 @@ export default function CtaButtonView({ node, updateAttributes, editor }: any) {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ ...baseStyles, ...previewVariantStyles }}
+                    style={{ ...baseStyles, ...previewVariantStyles, marginLeft: offset ?? undefined }}
                 >
                     {text}
                 </a>
               )}
+              {overlay}
           </NodeViewWrapper>
           )
 }

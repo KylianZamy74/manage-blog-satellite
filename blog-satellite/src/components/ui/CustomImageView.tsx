@@ -1,54 +1,49 @@
 "use client"
 
 import { NodeViewWrapper } from '@tiptap/react'
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { AlignLeft, AlignCenter, AlignRight, GripVertical, Trash2 } from 'lucide-react'
+import { useResizeDrag } from '@/hooks/use-resize-drag'
+import { useBlockDrag } from '@/hooks/use-block-drag'
 
-export default function CustomImageView({ node, updateAttributes, selected, deleteNode, editor }: any) {
-    const { src, alt, width, align } = node.attrs
+// Resize handles like a window: 4 corners + left/right edges ([dirX, dirY, position classes, cursor])
+const HANDLES: [1 | -1 | 0, 1 | -1 | 0, string, string][] = [
+    [-1, -1, '-top-1.5 -left-1.5', 'cursor-nwse-resize'],
+    [1, -1, '-top-1.5 -right-1.5', 'cursor-nesw-resize'],
+    [-1, 1, '-bottom-1.5 -left-1.5', 'cursor-nesw-resize'],
+    [1, 1, '-bottom-1.5 -right-1.5', 'cursor-nwse-resize'],
+    [-1, 0, 'top-1/2 -translate-y-1/2 -left-1 h-10 w-2', 'cursor-ew-resize'],
+    [1, 0, 'top-1/2 -translate-y-1/2 -right-1 h-10 w-2', 'cursor-ew-resize'],
+]
+
+export default function CustomImageView({ node, updateAttributes, selected, deleteNode, editor, getPos }: any) {
+    const { src, alt, width, align, offset } = node.attrs
 
     const [editAlt, setEditAlt] = useState(alt)
     const [editAlign, setEditAlign] = useState(align)
     const [open, setOpen] = useState(false)
-    const [isResizing, setIsResizing] = useState(false)
+    const { resizing, startResize } = useResizeDrag()
+    const { startDrag, dragging, overlay } = useBlockDrag(editor, getPos)
 
     const handleSave = () => {
-        updateAttributes({ alt: editAlt, align: editAlign })
+        updateAttributes({ alt: editAlt, align: editAlign, offset: editAlign === align ? offset : null })
         setOpen(false)
     }
 
-    const handleResizeStart = useCallback((e: React.MouseEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        setIsResizing(true)
-
-        const startX = e.clientX
-        const img = (e.currentTarget as HTMLElement).parentElement?.querySelector('img')
-        if (!img) return
-        const startWidth = img.offsetWidth
-
-        const handleMouseMove = (moveEvent: MouseEvent) => {
-            const diff = moveEvent.clientX - startX
-            const newWidth = Math.max(100, startWidth + diff)
-            updateAttributes({ width: `${newWidth}px` })
-        }
-
-        const handleMouseUp = () => {
-            setIsResizing(false)
-            document.removeEventListener('mousemove', handleMouseMove)
-            document.removeEventListener('mouseup', handleMouseUp)
-        }
-
-        document.addEventListener('mousemove', handleMouseMove)
-        document.addEventListener('mouseup', handleMouseUp)
-    }, [updateAttributes])
+    const resizeFrom = (dirX: 1 | -1 | 0, dirY: 1 | -1 | 0) => (e: React.PointerEvent<HTMLElement>) => {
+        const frame = e.currentTarget.parentElement
+        const container = e.currentTarget.closest<HTMLElement>('[data-type="customImage"]')
+        if (frame && container) startResize(e, {
+            frame, container, dirX, dirY, symmetric: align === 'center',
+            onCommit: (newWidth) => updateAttributes({ width: newWidth }),
+        })
+    }
 
     return (
         <NodeViewWrapper
-            draggable
             data-type="customImage"
             style={{
                 textAlign: align as React.CSSProperties['textAlign'],
@@ -59,7 +54,7 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
             {editor.isEditable ? (
                 // ── MODE ÉDITION : Popover + drag handle + resize + badge ALT ──
                 <Popover open={open} onOpenChange={(isOpen) => {
-                    if (isResizing) return
+                    if (resizing) return
                     setOpen(isOpen)
                     if (isOpen) {
                         setEditAlt(alt)
@@ -67,9 +62,14 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                     }
                 }}>
                     <PopoverTrigger asChild>
-                        <div style={{ display: 'inline-block', position: 'relative' }}>
+                        <div
+                            className="group"
+                            onPointerDown={(e) => { e.preventDefault(); startDrag(e) }}
+                            style={{ display: 'inline-block', position: 'relative', width, maxWidth: '100%', verticalAlign: 'top', marginLeft: offset ?? undefined, opacity: dragging ? 0.4 : 1 }}
+                        >
+                            {/* Repère visuel : glisser l'image pour la placer (gauche / centre / droite, entre deux paragraphes) */}
                             <div
-                                data-drag-handle
+                                className={selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
                                 style={{
                                     position: 'absolute',
                                     top: 4,
@@ -77,8 +77,7 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                                     background: 'rgba(0,0,0,0.5)',
                                     borderRadius: '4px',
                                     padding: '2px',
-                                    cursor: 'grab',
-                                    opacity: selected ? 1 : 0,
+                                    pointerEvents: 'none',
                                     transition: 'opacity 0.2s',
                                     zIndex: 10,
                                     display: 'flex',
@@ -92,32 +91,25 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                                 src={src}
                                 alt={alt}
                                 style={{
-                                    width: width,
-                                    maxWidth: '100%',
+                                    width: '100%',
                                     height: 'auto',
                                     borderRadius: '8px',
-                                    outline: selected ? '2px solid #3b82f6' : 'none',
-                                    cursor: 'pointer',
+                                    outline: selected || resizing ? '2px solid #3b82f6' : 'none',
+                                    cursor: 'grab',
                                     display: 'block',
                                 }}
                                 draggable={false}
                             />
 
-                            <div
-                                onMouseDown={handleResizeStart}
-                                style={{
-                                    position: 'absolute',
-                                    bottom: 4,
-                                    right: 4,
-                                    width: 16,
-                                    height: 16,
-                                    background: '#3b82f6',
-                                    borderRadius: '2px',
-                                    cursor: 'nwse-resize',
-                                    opacity: selected ? 1 : 0,
-                                    transition: 'opacity 0.2s',
-                                }}
-                            />
+                            {/* Poignées de redimensionnement (coins et bords), visibles au survol */}
+                            {HANDLES.map(([dirX, dirY, position, cursor]) => (
+                                <div
+                                    key={`${dirX}${dirY}`}
+                                    onPointerDown={resizeFrom(dirX, dirY)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className={`absolute z-10 ${position} ${cursor} ${dirY ? 'h-3 w-3' : ''} rounded-full bg-white border-2 border-blue-500 shadow touch-none transition-opacity ${selected || resizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                                />
+                            ))}
 
                             {!alt && (
                                 <div
@@ -212,10 +204,12 @@ export default function CustomImageView({ node, updateAttributes, selected, dele
                         height: 'auto',
                         borderRadius: '8px',
                         display: 'inline-block',
+                        marginLeft: offset ?? undefined,
                     }}
                 />
             )}
             
+            {overlay}
         </NodeViewWrapper>
     )
 }

@@ -12,7 +12,8 @@ export const CtaButton = Node.create({
             text: { default: 'Cliquez ici' },
             variant: { default: 'primary' },   // 'primary' | 'secondary'
             color: { default: '#2563eb' },
-            align: { default: 'left' },   // bleu par défaut
+            align: { default: 'left' },
+            offset: { default: null },   // décalage depuis la gauche (ex. '25%'), seulement si align = left
         }
     },
     renderHTML({ HTMLAttributes }) {
@@ -33,7 +34,7 @@ export const CtaButton = Node.create({
             ? `background-color: ${color}; color: white; border: 2px solid ${color}`
             : `background-color: transparent; color: ${color}; border: 2px solid ${color}`
 
-        const style = `${baseStyles}; ${variantStyles}`
+        const style = `${baseStyles}; ${variantStyles}${HTMLAttributes.offset ? `; margin-left: ${HTMLAttributes.offset}` : ''}`
 
         return [
             'div',
@@ -65,6 +66,7 @@ export const CtaButton = Node.create({
                         variant: link.getAttribute('data-cta') || 'primary',
                         color: (link as HTMLElement).style.backgroundColor || (link as HTMLElement).style.color || '#2563eb',
                         align: element.style.textAlign || 'left',
+                        offset: (link as HTMLElement).style.marginLeft || null,
                     }
                 },
             },
