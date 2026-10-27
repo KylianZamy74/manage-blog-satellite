@@ -5,6 +5,7 @@ import { BubbleMenu } from '@tiptap/react/menus'
 import StarterKit from '@tiptap/starter-kit'
 import { Placeholder, CharacterCount } from '@tiptap/extensions'
 import type { EditorView } from '@tiptap/pm/view'
+import { NodeSelection, type EditorState } from '@tiptap/pm/state'
 import type { SuggestionProps } from '@tiptap/suggestion'
 import { CustomImage } from '@/lib/tiptap/custom-image-extension'
 import { Button } from '@/components/ui/button'
@@ -34,6 +35,19 @@ const WORDS_PER_MINUTE = 200
 
 const imageFiles = (files?: FileList | null) => Array.from(files ?? []).filter((f) => f.type.startsWith('image/'))
 
+// Blocks (image, CTA, gallery) always land between top-level blocks, never inside a quote or a list;
+// an empty paragraph is replaced (e.g. after typing « / »)
+const blockRange = (state: EditorState, pos = state.selection.to) => {
+    const $pos = state.doc.resolve(pos)
+    if ($pos.depth === 0) return { from: pos, to: pos }
+    const block = $pos.node(1)
+    const empty = block.isTextblock && block.content.size === 0
+    return { from: empty ? $pos.before(1) : $pos.after(1), to: $pos.after(1) }
+}
+
+const insertBlock = (editor: Editor, type: string) =>
+    editor.chain().focus().insertContentAt(blockRange(editor.state), { type }).run()
+
 const normalizeUrl = (url: string) =>
     /^(https?:|mailto:|tel:|\/|#)/i.test(url) ? url : `https://${url}`
 
@@ -55,7 +69,11 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
             try {
                 const src = await uploadImage(file)
                 const node = view.state.schema.nodes.customImage.create({ src })
-                view.dispatch(pos === undefined ? view.state.tr.replaceSelectionWith(node) : view.state.tr.insert(pos, node))
+                const { from, to } = blockRange(view.state, pos)
+                const tr = view.state.tr.replaceWith(from, to, node)
+                // select the new image: the next one (multiple files) goes right after it
+                view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, from)))
+                pos = undefined
             } catch (error) {
                 alert((error as Error).message)
             } finally {
@@ -95,8 +113,8 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                     { title: 'Liste', keywords: 'list puces', run: (e) => e.chain().focus().toggleBulletList().run() },
                     { title: 'Citation', keywords: 'quote blockquote', run: (e) => e.chain().focus().toggleBlockquote().run() },
                     { title: 'Image', keywords: 'photo picture', run: (e) => pickAndInsertImage(e.view) },
-                    { title: 'Galerie', keywords: 'gallery images', run: (e) => e.chain().focus().insertContent({ type: 'imageGallery' }).run() },
-                    { title: 'Bouton CTA', keywords: 'cta button lien', run: (e) => e.chain().focus().insertContent({ type: 'ctaButton' }).run() },
+                    { title: 'Galerie', keywords: 'gallery images', run: (e) => insertBlock(e, 'imageGallery') },
+                    { title: 'Bouton CTA', keywords: 'cta button lien', run: (e) => insertBlock(e, 'ctaButton') },
                 ],
                 render: () => ({
                     onStart: (props) => updateSlash(toSlashState(props)),
@@ -223,7 +241,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().insertContent({ type: 'ctaButton' }).run()}
+                    onClick={() => insertBlock(editor, 'ctaButton')}
                 >
                     CTA
                 </Button>
@@ -231,7 +249,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().insertContent({ type: 'imageGallery' }).run()}
+                    onClick={() => insertBlock(editor, 'imageGallery')}
                 >
                     <LayoutGrid className="h-4 w-4" />
                 </Button>
